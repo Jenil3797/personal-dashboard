@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Personal Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Include Phosphor Icons for UI elements -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
         /* Custom scrollbar for a cleaner look */
@@ -51,20 +50,17 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col overflow-hidden">
 
-    <!-- Toast Notification Container -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 opacity-0 pointer-events-none transition-opacity duration-300">
         <div id="toast-message" class="bg-white px-6 py-3 rounded-lg shadow-lg border-l-4 font-medium">
             Message goes here
         </div>
     </div>
 
-    <!-- FULL SCREEN LOADER -->
     <div id="global-loader" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 hidden flex-col items-center justify-center">
         <div class="loader mb-4" style="width: 48px; height: 48px;"></div>
         <p class="text-slate-600 font-medium">Syncing with GitHub...</p>
     </div>
 
-    <!-- LOGIN SCREEN -->
     <div id="login-view" class="bg-slate-50 min-h-screen flex items-center justify-center p-4 w-full absolute inset-0 z-40 hidden">
         <div class="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
             <div class="text-center mb-6">
@@ -96,10 +92,8 @@
         </div>
     </div>
 
-    <!-- MAIN APP SCREEN -->
     <div id="app-view" class="w-full h-screen flex flex-col md:flex-row hidden">
         
-        <!-- Sidebar (Desktop) / Bottom Nav (Mobile) -->
         <nav class="bg-slate-900 text-white md:w-64 w-full flex-shrink-0 md:flex flex-col z-20 order-last md:order-first shadow-xl md:shadow-none">
             <div class="p-6 hidden md:block border-b border-slate-800">
                 <h2 class="text-2xl font-bold text-white flex items-center gap-2">
@@ -131,9 +125,7 @@
             </div>
         </nav>
 
-        <!-- Main Content Area -->
         <main class="flex-1 bg-slate-50 overflow-y-auto w-full relative pb-20 md:pb-0">
-            <!-- Mobile Header -->
             <header class="md:hidden bg-white shadow-sm px-4 py-4 flex justify-between items-center sticky top-0 z-10">
                 <h1 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                     <i class="ph ph-squares-four text-blue-600"></i> My Dashboard
@@ -150,7 +142,6 @@
 
             <div class="p-4 md:p-8 max-w-6xl mx-auto">
                 
-                <!-- OVERVIEW TAB -->
                 <div id="tab-overview" class="tab-content block">
                     <div class="flex justify-between items-center mb-6 hidden md:flex">
                         <h2 class="text-2xl font-bold text-slate-800">Overview</h2>
@@ -159,7 +150,6 @@
                         </button>
                     </div>
                     
-                    <!-- Metrics Grid -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mb-8">
                         <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
                             <div class="flex items-center justify-between mb-4">
@@ -223,7 +213,6 @@
                     </div>
                 </div>
 
-                <!-- TASKS TAB -->
                 <div id="tab-tasks" class="tab-content hidden">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-2xl font-bold text-slate-800 hidden md:block">Task Manager</h2>
@@ -234,31 +223,26 @@
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                        <!-- Pending Tasks -->
                         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                             <div class="bg-slate-50 px-5 py-4 border-b border-slate-200 flex justify-between items-center">
                                 <h3 class="font-bold text-slate-700">Pending</h3>
                                 <span id="count-pending" class="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold">0</span>
                             </div>
                             <ul id="list-pending-tasks" class="divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
-                                <!-- JS Injected -->
-                            </ul>
+                                </ul>
                         </div>
 
-                        <!-- Completed Tasks -->
                         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden opacity-80">
                             <div class="bg-slate-50 px-5 py-4 border-b border-slate-200 flex justify-between items-center">
                                 <h3 class="font-bold text-slate-700">Completed</h3>
                                 <span id="count-completed" class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">0</span>
                             </div>
                             <ul id="list-completed-tasks" class="divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
-                                <!-- JS Injected -->
-                            </ul>
+                                </ul>
                         </div>
                     </div>
                 </div>
 
-                <!-- CASHBOOK TAB -->
                 <div id="tab-cashbook" class="tab-content hidden">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-2xl font-bold text-slate-800 hidden md:block">Cashbook</h2>
@@ -268,17 +252,12 @@
                         </button>
                     </div>
 
-                    <!-- Person Balances Summary -->
                     <div id="person-balances-container" class="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4 hidden">
-                        <!-- JS Injected -->
-                    </div>
+                        </div>
 
-                    <!-- Month Filter Pills -->
                     <div class="mb-4 flex gap-2 overflow-x-auto pb-2 custom-scrollbar" id="cashbook-month-filters">
-                        <!-- JS Injected -->
-                    </div>
+                        </div>
 
-                    <!-- Cashbook Table -->
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto">
                         <table class="w-full text-left border-collapse min-w-[600px]">
                             <thead>
@@ -293,11 +272,9 @@
                                 </tr>
                             </thead>
                             <tbody id="list-cashbook-entries" class="divide-y divide-slate-100 text-sm">
-                                <!-- JS Injected -->
-                            </tbody>
+                                </tbody>
                         </table>
                         
-                        <!-- Totals Row -->
                         <div class="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-6 text-sm">
                             <div class="font-medium text-slate-600">Total Cash: <span id="cb-total-cash" class="text-slate-800 font-bold ml-1">₹0</span></div>
                             <div class="font-medium text-slate-600">Total Online: <span id="cb-total-online" class="text-slate-800 font-bold ml-1">₹0</span></div>
@@ -309,9 +286,6 @@
         </main>
     </div>
 
-    <!-- MODALS OVERLAYS -->
-    
-    <!-- Add Task Modal -->
     <div id="add-task-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all">
             <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
@@ -361,7 +335,6 @@
         </div>
     </div>
 
-    <!-- Task Detail Modal -->
     <div id="detail-task-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all">
             <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
@@ -389,7 +362,6 @@
         </div>
     </div>
 
-    <!-- Add/Edit Cashbook Entry Modal -->
     <div id="add-cashbook-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all">
             <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
@@ -657,23 +629,21 @@
         async function fetchGitHubFile(filename) {
             const { pat, user, repo } = githubCreds;
             
-            // CACHE-BUSTER: Append a unique timestamp so the browser is forced to fetch the latest file!
+            // CACHE-BUSTER: Append a unique timestamp to force the browser to fetch the latest file
             const timestamp = new Date().getTime();
             const url = `https://api.github.com/repos/${user}/${repo}/contents/${filename}?t=${timestamp}`;
 
+            // Removed 'Cache-Control' header to fix the CORS issue! Using browser native 'cache' option instead.
             const response = await fetch(url, {
                 headers: { 
                     'Authorization': `token ${pat}`, 
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Cache-Control': 'no-cache'
-                }
+                    'Accept': 'application/vnd.github.v3+json'
+                },
+                cache: 'no-store' // This tells the browser safely not to cache the result
             });
 
             if (!response.ok) {
-                // If it's just a 404 (file not created yet), safely return empty array.
                 if (response.status === 404) return [];
-                
-                // If it's a 401 (Bad PAT) or other error, throw it so the user sees it!
                 const errData = await response.json().catch(() => ({}));
                 throw new Error(errData.message || `Failed to fetch ${filename} (Status: ${response.status})`);
             }
@@ -712,7 +682,7 @@
             }
             
             const data = await response.json();
-            fileSHAs[filename] = data.content.sha; // Update with the new hash so subsequent updates work!
+            fileSHAs[filename] = data.content.sha;
             return data;
         }
 
@@ -722,7 +692,6 @@
         async function loadAllData() {
             toggleLoader(true);
             try {
-                // We let errors throw naturally now so they don't silently fail!
                 const [tasks, cashbook] = await Promise.all([
                     fetchGitHubFile('tasks.csv'), 
                     fetchGitHubFile('cashbook.csv')
