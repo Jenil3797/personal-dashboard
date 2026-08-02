@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Include Phosphor Icons for UI elements -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Toast notification styling */
+        #toast-container { transition: opacity 0.3s ease; }
+        
+        /* Active Tab Styling for Sidebar/Bottom Nav */
+        .nav-btn.active {
+            background-color: #2563eb; /* blue-600 */
+            color: #ffffff;
+        }
+        .nav-btn:not(.active) {
+            color: #94a3b8; /* slate-400 */
+        }
+        .nav-btn:not(.active):hover {
+            background-color: #1e293b; /* slate-800 */
+            color: #e2e8f0; /* slate-200 */
+        }
+        
+        /* Month Filter Active Styling */
+        .month-btn.active {
+            background-color: #1e293b;
+            color: #ffffff;
+            border-color: #1e293b;
+        }
+        
+        /* Loader */
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2563eb;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col overflow-hidden">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div id="toast-message" class="bg-white px-6 py-3 rounded-lg shadow-lg border-l-4 font-medium">
+            Message goes here
+        </div>
+    </div>
+
+    <!-- FULL SCREEN LOADER -->
+    <div id="global-loader" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 hidden flex-col items-center justify-center">
+        <div class="loader mb-4" style="width: 48px; height: 48px;"></div>
+        <p class="text-slate-600 font-medium">Syncing with GitHub...</p>
+    </div>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-view" class="bg-slate-50 min-h-screen flex items-center justify-center p-4 w-full absolute inset-0 z-40 hidden">
+        <div class="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
+            <div class="text-center mb-6">
+                <h1 class="text-2xl font-bold text-slate-900">Welcome Back</h1>
+                <p class="text-sm text-slate-500 mt-1">Connect your GitHub repository to continue</p>
+            </div>
+            
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">GitHub PAT</label>
+                    <input type="password" id="input-pat" required placeholder="ghp_xxxxxxxxxxxx" 
+                           class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-slate-400 mt-1">Requires 'repo' scope</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">GitHub Username</label>
+                    <input type="text" id="input-user" required placeholder="e.g., octocat"
+                           class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Repository Name</label>
+                    <input type="text" id="input-repo" required placeholder="e.g., personal-dashboard"
+                           class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+                    Connect & Save
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP SCREEN -->
+    <div id="app-view" class="w-full h-screen flex flex-col md:flex-row hidden">
+        
+        <!-- Sidebar (Desktop) / Bottom Nav (Mobile) -->
+        <nav class="bg-slate-900 text-white md:w-64 w-full flex-shrink-0 md:flex flex-col z-20 order-last md:order-first shadow-xl md:shadow-none">
+            <div class="p-6 hidden md:block border-b border-slate-800">
+                <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+                    <i class="ph ph-squares-four text-blue-500"></i>
+                    Dashboard
+                </h2>
+            </div>
+
+            <div class="flex-1 flex md:flex-col justify-around md:justify-start px-2 py-3 md:p-4 gap-2 overflow-x-auto md:overflow-visible">
+                <button onclick="switchTab('tab-overview', this)" class="nav-btn active flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center px-4 py-3 rounded-lg transition gap-1 md:gap-3">
+                    <i class="ph ph-chart-line-up text-xl md:text-2xl"></i>
+                    <span class="text-xs md:text-sm font-medium">Overview</span>
+                </button>
+                <button onclick="switchTab('tab-tasks', this)" class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center px-4 py-3 rounded-lg transition gap-1 md:gap-3">
+                    <i class="ph ph-check-square-offset text-xl md:text-2xl"></i>
+                    <span class="text-xs md:text-sm font-medium">Tasks</span>
+                </button>
+                <button onclick="switchTab('tab-cashbook', this)" class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center px-4 py-3 rounded-lg transition gap-1 md:gap-3">
+                    <i class="ph ph-wallet text-xl md:text-2xl"></i>
+                    <span class="text-xs md:text-sm font-medium">Cashbook</span>
+                </button>
+            </div>
+
+            <div class="p-4 hidden md:block border-t border-slate-800">
+                <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-red-400 transition">
+                    <i class="ph ph-sign-out text-2xl"></i>
+                    <span class="text-sm font-medium">Disconnect</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 bg-slate-50 overflow-y-auto w-full relative pb-20 md:pb-0">
+            <!-- Mobile Header -->
+            <header class="md:hidden bg-white shadow-sm px-4 py-4 flex justify-between items-center sticky top-0 z-10">
+                <h1 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="ph ph-squares-four text-blue-600"></i> My Dashboard
+                </h1>
+                <div class="flex gap-2">
+                    <button onclick="loadAllData()" class="text-slate-500 p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition">
+                        <i class="ph ph-arrows-clockwise text-xl"></i>
+                    </button>
+                    <button onclick="logout()" class="text-red-500 p-2 rounded-lg bg-red-50 hover:bg-red-100 transition">
+                        <i class="ph ph-sign-out text-xl"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="p-4 md:p-8 max-w-6xl mx-auto">
+                
+                <!-- OVERVIEW TAB -->
+                <div id="tab-overview" class="tab-content block">
+                    <div class="flex justify-between items-center mb-6 hidden md:flex">
+                        <h2 class="text-2xl font-bold text-slate-800">Overview</h2>
+                        <button onclick="loadAllData()" class="bg-white text-slate-600 border border-slate-200 px-4 py-2 rounded-lg font-medium hover:bg-slate-50 transition flex items-center gap-2 shadow-sm">
+                            <i class="ph ph-arrows-clockwise text-lg"></i> Refresh Data
+                        </button>
+                    </div>
+                    
+                    <!-- Metrics Grid (2 columns for 3 rows) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mb-8">
+                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-slate-500 text-xs md:text-sm font-semibold">Total Tasks</h3>
+                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                    <i class="ph ph-list-numbers text-xl"></i>
+                                </div>
+                            </div>
+                            <p class="text-2xl md:text-3xl font-bold text-slate-800" id="metric-total-tasks">0</p>
+                        </div>
+                        
+                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-slate-500 text-xs md:text-sm font-semibold">Pending Tasks</h3>
+                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                                    <i class="ph ph-hourglass-high text-xl"></i>
+                                </div>
+                            </div>
+                            <p class="text-2xl md:text-3xl font-bold text-slate-800" id="metric-pending-tasks">0</p>
+                        </div>
+
+                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-slate-500 text-xs md:text-sm font-semibold">Cash Balance</h3>
+                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                                    <i class="ph ph-money text-xl"></i>
+                                </div>
+                            </div>
+                            <p class="text-2xl md:text-3xl font-bold text-slate-800">₹<span id="metric-cash-balance">0</span></p>
+                        </div>
+
+                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-slate-500 text-xs md:text-sm font-semibold">Online Balance</h3>
+                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                                    <i class="ph ph-bank text-xl"></i>
+                                </div>
+                            </div>
+                            <p class="text-2xl md:text-3xl font-bold text-slate-800">₹<span id="metric-online-balance">0</span></p>
+                        </div>
+
+                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-slate-500 text-xs md:text-sm font-semibold">You will get</h3>
+                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                                    <i class="ph ph-trend-up text-xl"></i>
+                                </div>
+                            </div>
+                            <p class="text-2xl md:text-3xl font-bold text-emerald-600">₹<span id="metric-will-get">0</span></p>
+                        </div>
+
+                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-slate-500 text-xs md:text-sm font-semibold">You will give</h3>
+                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
+                                    <i class="ph ph-trend-down text-xl"></i>
+                                </div>
+                            </div>
+                            <p class="text-2xl md:text-3xl font-bold text-rose-600">₹<span id="metric-will-give">0</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TASKS TAB -->
+                <div id="tab-tasks" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-slate-800 hidden md:block">Task Manager</h2>
+                        <h2 class="text-xl font-bold text-slate-800 md:hidden">Tasks</h2>
+                        <button onclick="openModal('add-task-modal')" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition flex items-center gap-2 shadow-sm">
+                            <i class="ph ph-plus-circle text-xl"></i> Add Task
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                        <!-- Pending Tasks -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div class="bg-slate-50 px-5 py-4 border-b border-slate-200 flex justify-between items-center">
+                                <h3 class="font-bold text-slate-700">Pending</h3>
+                                <span id="count-pending" class="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold">0</span>
+                            </div>
+                            <ul id="list-pending-tasks" class="divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
+                                <!-- JS Injected -->
+                            </ul>
+                        </div>
+
+                        <!-- Completed Tasks -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden opacity-80">
+                            <div class="bg-slate-50 px-5 py-4 border-b border-slate-200 flex justify-between items-center">
+                                <h3 class="font-bold text-slate-700">Completed</h3>
+                                <span id="count-completed" class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">0</span>
+                            </div>
+                            <ul id="list-completed-tasks" class="divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
+                                <!-- JS Injected -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CASHBOOK TAB -->
+                <div id="tab-cashbook" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-slate-800 hidden md:block">Cashbook</h2>
+                        <h2 class="text-xl font-bold text-slate-800 md:hidden">Cashbook</h2>
+                        <button onclick="openModal('add-cashbook-modal')" class="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition flex items-center gap-2 shadow-sm">
+                            <i class="ph ph-plus-circle text-xl"></i> Add Entry
+                        </button>
+                    </div>
+
+                    <!-- Person Balances Summary -->
+                    <div id="person-balances-container" class="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4 hidden">
+                        <!-- JS Injected -->
+                    </div>
+
+                    <!-- Month Filter Pills -->
+                    <div class="mb-4 flex gap-2 overflow-x-auto pb-2 custom-scrollbar" id="cashbook-month-filters">
+                        <!-- JS Injected -->
+                    </div>
+
+                    <!-- Cashbook Table -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[600px]">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
+                                    <th class="p-4 font-semibold w-28">Date</th>
+                                    <th class="p-4 font-semibold w-24">Time</th>
+                                    <th class="p-4 font-semibold">Description</th>
+                                    <th class="p-4 font-semibold w-24">Mode</th>
+                                    <th class="p-4 font-semibold text-green-600 text-right w-32">In (₹)</th>
+                                    <th class="p-4 font-semibold text-red-600 text-right w-32">Out (₹)</th>
+                                    <th class="p-4 font-semibold w-24 text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="list-cashbook-entries" class="divide-y divide-slate-100 text-sm">
+                                <!-- JS Injected -->
+                            </tbody>
+                        </table>
+                        
+                        <!-- Totals Row -->
+                        <div class="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-6 text-sm">
+                            <div class="font-medium text-slate-600">Total Cash: <span id="cb-total-cash" class="text-slate-800 font-bold ml-1">₹0</span></div>
+                            <div class="font-medium text-slate-600">Total Online: <span id="cb-total-online" class="text-slate-800 font-bold ml-1">₹0</span></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODALS OVERLAYS -->
+    
+    <!-- Add Task Modal -->
+    <div id="add-task-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-lg text-slate-800">Add New Task</h3>
+                <button onclick="closeModal('add-task-modal')" class="text-slate-400 hover:text-slate-600 transition"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            <form id="form-add-task" onsubmit="handleAddTask(event)" class="p-6 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Issue Date</label>
+                        <input type="date" id="task-issue-date" readonly class="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-100 text-slate-500 cursor-not-allowed outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Issue Time</label>
+                        <input type="time" id="task-issue-time" readonly class="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-100 text-slate-500 cursor-not-allowed outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Task Name</label>
+                    <input type="text" id="task-name" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Description (Optional)</label>
+                    <textarea id="task-desc" rows="3" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Priority</label>
+                        <select id="task-priority" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                            <option value="Low">Low</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Due Date (Optional)</label>
+                        <input type="date" id="task-due" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal('add-task-modal')" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition">Cancel</button>
+                    <button type="submit" id="btn-save-task" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition flex items-center gap-2">
+                        Save Task
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Task Detail Modal -->
+    <div id="detail-task-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                <h3 class="font-bold text-lg text-slate-800">Task Details</h3>
+                <button onclick="closeModal('detail-task-modal')" class="text-slate-400 hover:text-slate-600 transition"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            <div class="p-6">
+                <div class="mb-4 flex items-center justify-between">
+                    <h2 id="detail-name" class="text-xl font-bold text-slate-900">Task Name</h2>
+                    <span id="detail-priority" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">Priority</span>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-lg mb-4 border border-slate-100">
+                    <p id="detail-desc" class="text-slate-700 whitespace-pre-wrap">Description goes here</p>
+                </div>
+                <div class="flex flex-col gap-2 text-sm text-slate-500">
+                    <p><i class="ph ph-calendar-plus mr-1"></i> Issued: <span id="detail-issue" class="font-medium text-slate-700"></span></p>
+                    <p><i class="ph ph-calendar-blank mr-1"></i> Due: <span id="detail-due" class="font-medium text-slate-700"></span></p>
+                    <p><i class="ph ph-check-circle mr-1"></i> Status: <span id="detail-status" class="font-medium text-slate-700"></span></p>
+                    <p id="detail-completed-wrap" class="hidden"><i class="ph ph-calendar-check mr-1"></i> Completed: <span id="detail-completed" class="font-medium text-slate-700"></span></p>
+                </div>
+                <div class="mt-6 flex justify-end">
+                    <button onclick="closeModal('detail-task-modal')" class="bg-slate-200 text-slate-700 px-6 py-2 rounded-lg font-medium hover:bg-slate-300 transition">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Cashbook Entry Modal -->
+    <div id="add-cashbook-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h3 id="cb-modal-title" class="font-bold text-lg text-slate-800">Add Cashbook Entry</h3>
+                <button onclick="closeModal('add-cashbook-modal')" class="text-slate-400 hover:text-slate-600 transition"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            <form id="form-add-cashbook" onsubmit="handleAddCashbook(event)" class="p-6 space-y-4">
+                <input type="hidden" id="cb-edit-id" value="">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Type</label>
+                        <select id="cb-type" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none bg-white font-semibold">
+                            <option value="In" class="text-green-600">+ IN</option>
+                            <option value="Out" class="text-red-600">- OUT</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Amount (₹)</label>
+                        <input type="number" id="cb-amount" required min="0" step="0.01" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-mono">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Date</label>
+                        <input type="date" id="cb-date" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Time</label>
+                        <input type="time" id="cb-time" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Payment Mode</label>
+                        <select id="cb-mode" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none bg-white">
+                            <option value="Cash">Cash</option>
+                            <option value="Online">Online</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Person (Optional)</label>
+                        <input type="text" id="cb-person" placeholder="Who was involved?" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Description</label>
+                    <input type="text" id="cb-desc" required placeholder="What was this for?" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+                </div>
+
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal('add-cashbook-modal')" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition">Cancel</button>
+                    <button type="submit" id="btn-save-cashbook" class="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition flex items-center gap-2">
+                        Save Entry
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        /* ==========================================================================
+           GLOBAL STATE
+           ========================================================================== */
+        let githubCreds = { pat: '', user: '', repo: '' };
+        let appData = {
+            tasks: [],
+            cashbook: []
+        };
+        
+        let currentCashbookMonth = ''; // Track which month filter is active
+
+        /* ==========================================================================
+           UTILITIES (Timezone Safe Local Timestamps)
+           ========================================================================== */
+        function getLocalDateString() {
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        }
+        function getLocalTimeString() {
+            const now = new Date();
+            return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        }
+
+        /* ==========================================================================
+           UI & NAVIGATION UTILITIES
+           ========================================================================== */
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const msgEl = document.getElementById('toast-message');
+            msgEl.textContent = message;
+            
+            if (type === 'error') {
+                msgEl.className = 'bg-white px-6 py-3 rounded-lg shadow-lg border-l-4 border-red-500 text-red-700 font-medium';
+            } else if (type === 'success') {
+                msgEl.className = 'bg-white px-6 py-3 rounded-lg shadow-lg border-l-4 border-green-500 text-green-700 font-medium';
+            } else {
+                msgEl.className = 'bg-white px-6 py-3 rounded-lg shadow-lg border-l-4 border-blue-500 text-blue-700 font-medium';
+            }
+
+            container.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => container.classList.add('opacity-0', 'pointer-events-none'), 3000);
+        }
+
+        function toggleLoader(show) {
+            document.getElementById('global-loader').style.display = show ? 'flex' : 'none';
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+            
+            if(modalId === 'add-cashbook-modal') {
+                document.getElementById('form-add-cashbook').reset();
+                // Auto-fill timezone safe current date & time
+                document.getElementById('cb-date').value = getLocalDateString();
+                if (document.getElementById('cb-time')) {
+                    document.getElementById('cb-time').value = getLocalTimeString();
+                }
+
+                document.getElementById('cb-edit-id').value = '';
+                document.getElementById('cb-modal-title').textContent = 'Add Cashbook Entry';
+                document.getElementById('btn-save-cashbook').innerHTML = 'Save Entry';
+            }
+
+            if(modalId === 'add-task-modal') {
+                document.getElementById('form-add-task').reset();
+                // Auto-fill timezone safe current date & time and make them visible as readonly
+                document.getElementById('task-issue-date').value = getLocalDateString();
+                document.getElementById('task-issue-time').value = getLocalTimeString();
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+            if(modalId === 'add-task-modal') document.getElementById('form-add-task').reset();
+            if(modalId === 'add-cashbook-modal') document.getElementById('form-add-cashbook').reset();
+        }
+
+        function toggleAppView(showApp) {
+            const loginView = document.getElementById('login-view');
+            const appView = document.getElementById('app-view');
+            
+            if (showApp) {
+                loginView.classList.add('hidden');
+                appView.classList.remove('hidden');
+                document.body.classList.remove('bg-slate-50');
+            } else {
+                loginView.classList.remove('hidden');
+                appView.classList.add('hidden');
+                document.body.classList.add('bg-slate-50');
+            }
+        }
+
+        function switchTab(tabId, btnElement) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+                tab.classList.remove('block');
+            });
+            document.getElementById(tabId).classList.remove('hidden');
+            document.getElementById(tabId).classList.add('block');
+
+            if (btnElement) {
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+                btnElement.classList.add('active');
+            }
+        }
+
+        /* ==========================================================================
+           AUTHENTICATION LOGIC
+           ========================================================================== */
+        function initAuth() {
+            const saved = localStorage.getItem('dash_creds');
+            if (saved) {
+                githubCreds = JSON.parse(saved);
+                toggleAppView(true);
+                loadAllData(); // Auto load data when logged in
+            } else {
+                toggleAppView(false);
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const pat = document.getElementById('input-pat').value.trim();
+            const user = document.getElementById('input-user').value.trim();
+            const repo = document.getElementById('input-repo').value.trim();
+
+            if (!pat || !user || !repo) return showToast('Please fill all fields', 'error');
+
+            githubCreds = { pat, user, repo };
+            localStorage.setItem('dash_creds', JSON.stringify(githubCreds));
+            showToast('Credentials Saved!');
+            toggleAppView(true);
+            loadAllData();
+        }
+
+        function logout() {
+            localStorage.removeItem('dash_creds');
+            githubCreds = { pat: '', user: '', repo: '' };
+            appData = { tasks: [], cashbook: [] };
+            initAuth();
+            showToast('Disconnected successfully', 'info');
+        }
+
+        /* ==========================================================================
+           DATA PARSERS & ENCODERS
+           ========================================================================== */
+        function textToBase64(text) { return btoa(unescape(encodeURIComponent(text))); }
+        function base64ToText(base64) { return decodeURIComponent(escape(atob(base64))); }
+
+        function csvToJson(csvString) {
+            const lines = csvString.trim().split(/\r?\n/);
+            if (lines.length === 0) return [];
+            
+            const headers = lines[0].split(',').map(h => h.trim());
+            const result = [];
+            const splitRegex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
+
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                const currentline = lines[i].split(splitRegex);
+                const obj = {};
+                for (let j = 0; j < headers.length; j++) {
+                    let val = currentline[j] ? currentline[j].trim() : '';
+                    if (val.startsWith('"') && val.endsWith('"')) {
+                        val = val.substring(1, val.length - 1).replace(/""/g, '"');
+                    }
+                    obj[headers[j]] = val;
+                }
+                result.push(obj);
+            }
+            return result;
+        }
+
+        function jsonToCsv(jsonArray) {
+            if (!jsonArray || !jsonArray.length) return '';
+            
+            // Gather all unique keys from all objects to ensure no data is lost
+            const headerSet = new Set();
+            jsonArray.forEach(row => Object.keys(row).forEach(k => headerSet.add(k)));
+            const headers = Array.from(headerSet);
+            
+            let csv = headers.join(',') + '\n';
+            
+            jsonArray.forEach(row => {
+                const values = headers.map(header => {
+                    let val = row[header] === null || row[header] === undefined ? '' : String(row[header]);
+                    if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+                        val = `"${val.replace(/"/g, '""')}"`;
+                    }
+                    return val;
+                });
+                csv += values.join(',') + '\n';
+            });
+            return csv;
+        }
+
+        /* ==========================================================================
+           GITHUB API WRAPPER
+           ========================================================================== */
+        const fileSHAs = { 'tasks.csv': null, 'cashbook.csv': null };
+
+        async function fetchGitHubFile(filename) {
+            const { pat, user, repo } = githubCreds;
+            const response = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${filename}`, {
+                headers: { 'Authorization': `token ${pat}`, 'Accept': 'application/vnd.github.v3+json' }
+            });
+
+            if (!response.ok) throw new Error(`Failed to fetch ${filename}`);
+            
+            const data = await response.json();
+            fileSHAs[filename] = data.sha;
+            return csvToJson(base64ToText(data.content));
+        }
+
+        async function updateGitHubFile(filename, jsonData, commitMessage) {
+            const { pat, user, repo } = githubCreds;
+            const encodedContent = textToBase64(jsonToCsv(jsonData));
+
+            const bodyPayload = {
+                message: commitMessage,
+                content: encodedContent
+            };
+            
+            if (fileSHAs[filename]) {
+                bodyPayload.sha = fileSHAs[filename];
+            }
+
+            const response = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${filename}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${pat}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(bodyPayload)
+            });
+
+            if (!response.ok) {
+                const errDetails = await response.json().catch(() => ({}));
+                throw new Error(errDetails.message || `Failed to update ${filename}`);
+            }
+            
+            const data = await response.json();
+            fileSHAs[filename] = data.content.sha;
+            return data;
+        }
+
+        /* ==========================================================================
+           MAIN APP LOGIC (LOAD & RENDER)
+           ========================================================================== */
+        async function loadAllData() {
+            toggleLoader(true);
+            try {
+                const [tasks, cashbook] = await Promise.all([
+                    fetchGitHubFile('tasks.csv').catch(() => []), 
+                    fetchGitHubFile('cashbook.csv').catch(() => [])
+                ]);
+                
+                appData.tasks = tasks;
+                appData.cashbook = cashbook;
+                
+                renderTasksUI();
+                renderCashbookUI(); 
+                
+                showToast('Data Synced Successfully', 'success');
+            } catch (error) {
+                console.error(error);
+                showToast('Error syncing data. Check credentials.', 'error');
+            } finally {
+                toggleLoader(false);
+            }
+        }
+
+        /* ==========================================================================
+           TASK MODULE LOGIC
+           ========================================================================== */
+        function renderTasksUI() {
+            const pendingList = document.getElementById('list-pending-tasks');
+            const completedList = document.getElementById('list-completed-tasks');
+            
+            pendingList.innerHTML = '';
+            completedList.innerHTML = '';
+            
+            let pendingCount = 0;
+            let completedCount = 0;
+
+            const sortedTasks = [...appData.tasks].reverse();
+
+            sortedTasks.forEach(task => {
+                if(!task.ID) return;
+
+                const isCompleted = task.Status === 'Completed';
+                
+                let prioColor = 'text-slate-500 bg-slate-100';
+                if(task.Priority === 'High') prioColor = 'text-red-700 bg-red-100';
+                if(task.Priority === 'Medium') prioColor = 'text-blue-700 bg-blue-100';
+
+                const li = document.createElement('li');
+                li.className = `p-4 hover:bg-slate-50 transition group flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer`;
+                
+                li.innerHTML = `
+                    <div class="flex-1 min-w-0" onclick="viewTaskDetails('${task.ID}')">
+                        <div class="flex items-center gap-2 mb-1">
+                            <h4 class="font-semibold text-slate-800 truncate ${isCompleted ? 'line-through text-slate-500' : ''}">${task['Task Name']}</h4>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${prioColor}">${task.Priority}</span>
+                        </div>
+                        <p class="text-xs text-slate-500 truncate">${task.Description || 'No description'}</p>
+                        ${task['Due Date'] && !isCompleted ? `<p class="text-xs text-red-500 mt-1"><i class="ph ph-clock mr-1"></i>Due: ${task['Due Date']}</p>` : ''}
+                        ${isCompleted ? `<p class="text-xs text-green-600 mt-1"><i class="ph ph-check-circle mr-1"></i>Done: ${task['Completed Date']}</p>` : ''}
+                    </div>
+                    
+                    <div class="shrink-0 flex items-center justify-center gap-2">
+                        <button onclick="toggleTaskStatus('${task.ID}')" class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition
+                            ${isCompleted 
+                                ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' 
+                                : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'}">
+                            <i class="ph ${isCompleted ? 'ph-arrow-u-up-left' : 'ph-check'} text-lg"></i>
+                            ${isCompleted ? 'Undo' : 'Complete'}
+                        </button>
+                        <button onclick="deleteTask('${task.ID}')" class="flex items-center justify-center p-2 rounded-lg text-red-500 hover:bg-red-100 hover:text-red-600 bg-red-50 transition" title="Delete Task">
+                            <i class="ph ph-trash text-lg"></i>
+                        </button>
+                    </div>
+                `;
+
+                if (isCompleted) {
+                    completedList.appendChild(li);
+                    completedCount++;
+                } else {
+                    pendingList.appendChild(li);
+                    pendingCount++;
+                }
+            });
+
+            document.getElementById('count-pending').textContent = pendingCount;
+            document.getElementById('count-completed').textContent = completedCount;
+            document.getElementById('metric-total-tasks').textContent = appData.tasks.length;
+            document.getElementById('metric-pending-tasks').textContent = pendingCount;
+
+            if(pendingCount === 0) pendingList.innerHTML = '<div class="p-8 text-center text-slate-400">No pending tasks! 🎉</div>';
+            if(completedCount === 0) completedList.innerHTML = '<div class="p-8 text-center text-slate-400">No completed tasks yet.</div>';
+        }
+
+        async function handleAddTask(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-save-task');
+            btn.innerHTML = '<div class="loader" style="width:16px;height:16px;border-width:2px;"></div> Saving...';
+            btn.disabled = true;
+
+            const newTask = {
+                'ID': 'TSK-' + Date.now(),
+                'Task Name': document.getElementById('task-name').value.trim(),
+                'Description': document.getElementById('task-desc').value.trim(),
+                'Priority': document.getElementById('task-priority').value,
+                'Issue Date': document.getElementById('task-issue-date').value,
+                'Issue Time': document.getElementById('task-issue-time').value,
+                'Due Date': document.getElementById('task-due').value,
+                'Status': 'Pending',
+                'Completed Date': '',
+                'Completed Time': ''
+            };
+
+            appData.tasks.push(newTask);
+            
+            try {
+                await updateGitHubFile('tasks.csv', appData.tasks, `Add task: ${newTask['Task Name']}`);
+                renderTasksUI();
+                closeModal('add-task-modal');
+                showToast('Task added successfully!');
+            } catch (error) {
+                console.error(error);
+                appData.tasks.pop(); 
+                showToast(`Error: ${error.message}`, 'error'); 
+            } finally {
+                btn.innerHTML = 'Save Task';
+                btn.disabled = false;
+            }
+        }
+
+        async function toggleTaskStatus(taskId) {
+            const taskIndex = appData.tasks.findIndex(t => t.ID === taskId);
+            if(taskIndex === -1) return;
+
+            toggleLoader(true);
+            const task = appData.tasks[taskIndex];
+            const isCurrentlyCompleted = task.Status === 'Completed';
+            
+            const oldStatus = task.Status;
+            const oldDate = task['Completed Date'];
+            const oldTime = task['Completed Time'];
+
+            if (isCurrentlyCompleted) {
+                task.Status = 'Pending';
+                task['Completed Date'] = '';
+                task['Completed Time'] = '';
+            } else {
+                task.Status = 'Completed';
+                task['Completed Date'] = getLocalDateString();
+                task['Completed Time'] = getLocalTimeString();
+            }
+
+            try {
+                await updateGitHubFile('tasks.csv', appData.tasks, `Toggle status: ${task['Task Name']}`);
+                renderTasksUI();
+                showToast(isCurrentlyCompleted ? 'Task moved to Pending' : 'Task marked as Completed!');
+            } catch (error) {
+                console.error(error);
+                task.Status = oldStatus;
+                task['Completed Date'] = oldDate;
+                task['Completed Time'] = oldTime;
+                showToast(`Error: ${error.message}`, 'error');
+            } finally {
+                toggleLoader(false);
+            }
+        }
+
+        async function deleteTask(taskId) {
+            if(!confirm("Are you sure you want to delete this task?")) return;
+
+            const taskIndex = appData.tasks.findIndex(t => t.ID === taskId);
+            if(taskIndex === -1) return;
+
+            toggleLoader(true);
+            // Remove the task from the local array
+            const deletedTask = appData.tasks.splice(taskIndex, 1)[0]; 
+
+            try {
+                // Update GitHub file without the deleted task
+                await updateGitHubFile('tasks.csv', appData.tasks, `Delete task: ${deletedTask['Task Name']}`);
+                renderTasksUI();
+                showToast('Task deleted successfully!');
+            } catch (error) {
+                console.error(error);
+                // Rollback if GitHub update fails
+                appData.tasks.splice(taskIndex, 0, deletedTask); 
+                showToast(`Error: ${error.message}`, 'error');
+            } finally {
+                toggleLoader(false);
+            }
+        }
+
+        function viewTaskDetails(taskId) {
+            const task = appData.tasks.find(t => t.ID === taskId);
+            if(!task) return;
+
+            document.getElementById('detail-name').textContent = task['Task Name'];
+            const prioEl = document.getElementById('detail-priority');
+            prioEl.textContent = task.Priority;
+            prioEl.className = `px-3 py-1 rounded-full text-xs font-bold ${task.Priority === 'High' ? 'bg-red-100 text-red-700' : task.Priority === 'Medium' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'}`;
+
+            document.getElementById('detail-desc').textContent = task.Description || 'No description provided.';
+            document.getElementById('detail-due').textContent = task['Due Date'] || 'None';
+            
+            // Format Issue display
+            let issueDisplay = task['Issue Date'] || '-';
+            if(task['Issue Time']) issueDisplay += ` at ${task['Issue Time']}`;
+            document.getElementById('detail-issue').textContent = issueDisplay;
+            
+            const statusEl = document.getElementById('detail-status');
+            statusEl.textContent = task.Status;
+            statusEl.className = `font-medium ${task.Status === 'Completed' ? 'text-green-600' : 'text-amber-600'}`;
+
+            const compWrap = document.getElementById('detail-completed-wrap');
+            if(task.Status === 'Completed') {
+                compWrap.classList.remove('hidden');
+                let completedDisplay = task['Completed Date'];
+                if(task['Completed Time']) completedDisplay += ` at ${task['Completed Time']}`;
+                document.getElementById('detail-completed').textContent = completedDisplay;
+            } else {
+                compWrap.classList.add('hidden');
+            }
+
+            openModal('detail-task-modal');
+        }
+
+        /* ==========================================================================
+           CASHBOOK MODULE LOGIC
+           ========================================================================== */
+        function renderCashbookUI() {
+            let cashBal = 0;
+            let onlineBal = 0;
+            const monthsMap = new Map(); // Store entries grouped by month
+            const personLedger = {}; // Store net balance per person
+
+            // Parse and group entries
+            appData.cashbook.forEach(entry => {
+                if(!entry.ID || !entry.Amount) return; // Skip empty rows
+
+                const amt = parseFloat(entry.Amount) || 0;
+                
+                // Calculate Totals and Ledger logic for Overview Tab
+                if(entry['Transaction Type'] === 'In') {
+                    if(entry['Payment Mode'] === 'Cash') cashBal += amt;
+                    else onlineBal += amt;
+
+                    // If Money IN with a person, it means I received money from them. Thus I will give them something (negative balance relative to them)
+                    if(entry.Person && entry.Person.trim() !== '') {
+                        const p = entry.Person.trim();
+                        personLedger[p] = (personLedger[p] || 0) - amt;
+                    }
+                } else if (entry['Transaction Type'] === 'Out') {
+                    if(entry['Payment Mode'] === 'Cash') cashBal -= amt;
+                    else onlineBal -= amt;
+
+                    // If Money OUT to a person, it means I gave them money. Thus I will get money back from them (positive balance relative to them)
+                    if(entry.Person && entry.Person.trim() !== '') {
+                        const p = entry.Person.trim();
+                        personLedger[p] = (personLedger[p] || 0) + amt;
+                    }
+                }
+
+                // Group by Month (Timezone Safe Extract: YYYY-MM)
+                if(entry.Date) {
+                    const dateParts = entry.Date.split('-');
+                    if (dateParts.length >= 2) {
+                        const monthKey = `${dateParts[0]}-${dateParts[1]}`;
+                        if(!monthsMap.has(monthKey)) monthsMap.set(monthKey, []);
+                        monthsMap.get(monthKey).push(entry);
+                    }
+                }
+            });
+
+            // Calculate Total "Will Get" and "Will Give" across all persons
+            let totalWillGet = 0;
+            let totalWillGive = 0;
+            
+            const personContainer = document.getElementById('person-balances-container');
+            personContainer.innerHTML = '';
+            let hasPersons = false;
+
+            for (const [person, balance] of Object.entries(personLedger)) {
+                if (balance === 0) continue; // Skip settled balances
+                hasPersons = true;
+                
+                if (balance > 0) {
+                    totalWillGet += balance; // I will get this much back
+                } else {
+                    totalWillGive += Math.abs(balance); // I have to give this much
+                }
+
+                // Create individual person card in Cashbook tab
+                const pCard = document.createElement('div');
+                pCard.className = 'bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center shadow-sm';
+                pCard.innerHTML = `
+                    <span class="font-medium text-slate-700 truncate mr-2" title="${person}">${person}</span>
+                    <div class="text-right">
+                        <span class="block text-xs font-semibold ${balance > 0 ? 'text-green-600' : 'text-red-600'}">${balance > 0 ? 'You will get' : 'You will give'}</span>
+                        <span class="block font-bold ${balance > 0 ? 'text-green-600' : 'text-red-600'}">₹${Math.abs(balance).toLocaleString('en-IN')}</span>
+                    </div>
+                `;
+                personContainer.appendChild(pCard);
+            }
+
+            if(hasPersons) {
+                personContainer.classList.remove('hidden');
+            } else {
+                personContainer.classList.add('hidden');
+            }
+
+            // Update Overview Metrics
+            document.getElementById('metric-cash-balance').textContent = cashBal.toLocaleString('en-IN');
+            document.getElementById('metric-online-balance').textContent = onlineBal.toLocaleString('en-IN');
+            document.getElementById('metric-will-get').textContent = totalWillGet.toLocaleString('en-IN');
+            document.getElementById('metric-will-give').textContent = totalWillGive.toLocaleString('en-IN');
+
+            // Setup Month Filters UI
+            const filterContainer = document.getElementById('cashbook-month-filters');
+            filterContainer.innerHTML = '';
+            
+            const sortedMonths = Array.from(monthsMap.keys()).sort().reverse(); // Newest first
+
+            if(sortedMonths.length === 0) {
+                document.getElementById('list-cashbook-entries').innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">No cashbook entries yet. Click "Add Entry" to begin!</td></tr>`;
+                document.getElementById('cb-total-cash').textContent = '₹0';
+                document.getElementById('cb-total-online').textContent = '₹0';
+                return;
+            }
+
+            // Ensure a valid current month is selected
+            if(!currentCashbookMonth || !monthsMap.has(currentCashbookMonth)) {
+                currentCashbookMonth = sortedMonths[0];
+            }
+
+            // Create Filter Pills
+            sortedMonths.forEach(monthKey => {
+                // Format "2026-07" to "July 2026"
+                const [yyyy, mm] = monthKey.split('-');
+                const monthName = new Date(yyyy, parseInt(mm)-1).toLocaleString('default', { month: 'short', year: 'numeric' });
+                
+                const btn = document.createElement('button');
+                btn.className = `month-btn px-4 py-1.5 rounded-full text-sm font-medium border whitespace-nowrap transition 
+                    ${monthKey === currentCashbookMonth ? 'active' : 'border-slate-200 text-slate-600 hover:bg-slate-100'}`;
+                btn.textContent = monthName;
+                btn.onclick = () => {
+                    currentCashbookMonth = monthKey;
+                    renderCashbookUI(); // Re-render to update table
+                };
+                filterContainer.appendChild(btn);
+            });
+
+            // Render Table for selected month (Sorted by Date AND Time)
+            const tbody = document.getElementById('list-cashbook-entries');
+            tbody.innerHTML = '';
+            
+            const entriesToDisplay = monthsMap.get(currentCashbookMonth).sort((a,b) => {
+                // Combine Date and Time strings (fallback to 00:00 if time is missing)
+                const dateTimeA = new Date(`${a.Date}T${a.Time || '00:00'}:00`);
+                const dateTimeB = new Date(`${b.Date}T${b.Time || '00:00'}:00`);
+                return dateTimeB - dateTimeA; // Newest first
+            });
+
+            entriesToDisplay.forEach(entry => {
+                const amt = parseFloat(entry.Amount) || 0;
+                const isIn = entry['Transaction Type'] === 'In';
+                
+                let timeDisplay = '-';
+                if (entry.Time) {
+                    const [h, m] = entry.Time.split(':');
+                    const d = new Date();
+                    d.setHours(h, m);
+                    timeDisplay = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition group";
+                tr.innerHTML = `
+                    <td class="p-4 text-slate-500 whitespace-nowrap">${entry.Date}</td>
+                    <td class="p-4 text-slate-500 whitespace-nowrap font-medium">${timeDisplay}</td>
+                    <td class="p-4 font-medium text-slate-800">
+                        ${entry.Description}
+                        ${entry.Person ? `<span class="block text-xs text-slate-400 mt-0.5"><i class="ph ph-user mr-1"></i>${entry.Person}</span>` : ''}
+                    </td>
+                    <td class="p-4">
+                        <span class="px-2 py-1 rounded text-xs font-semibold ${entry['Payment Mode']==='Cash' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'}">
+                            ${entry['Payment Mode']}
+                        </span>
+                    </td>
+                    <td class="p-4 text-right font-mono font-bold text-green-600">${isIn ? `₹${amt.toLocaleString('en-IN')}` : '-'}</td>
+                    <td class="p-4 text-right font-mono font-bold text-red-600">${!isIn ? `₹${amt.toLocaleString('en-IN')}` : '-'}</td>
+                    <td class="p-4 text-center flex justify-center gap-1">
+                        <button onclick="editCashbookEntry('${entry.ID}')" class="text-slate-400 hover:text-blue-500 hover:bg-blue-50 p-2 rounded transition" title="Edit Entry">
+                            <i class="ph ph-pencil-simple text-lg"></i>
+                        </button>
+                        <button onclick="deleteCashbookEntry('${entry.ID}')" class="text-slate-400 hover:text-red-500 hover:bg-red-50 p-2 rounded transition" title="Delete Entry">
+                            <i class="ph ph-trash text-lg"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Update Table Footers with total balances
+            document.getElementById('cb-total-cash').textContent = `₹${cashBal.toLocaleString('en-IN')}`;
+            document.getElementById('cb-total-online').textContent = `₹${onlineBal.toLocaleString('en-IN')}`;
+        }
+
+        async function handleAddCashbook(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-save-cashbook');
+            const originalBtnText = btn.innerHTML;
+            btn.innerHTML = '<div class="loader" style="width:16px;height:16px;border-width:2px; border-top-color: white;"></div> Saving...';
+            btn.disabled = true;
+
+            const editId = document.getElementById('cb-edit-id').value;
+            const updatedEntryData = {
+                'Date': document.getElementById('cb-date').value,
+                'Time': document.getElementById('cb-time').value,
+                'Amount': document.getElementById('cb-amount').value,
+                'Transaction Type': document.getElementById('cb-type').value,
+                'Payment Mode': document.getElementById('cb-mode').value,
+                'Person': document.getElementById('cb-person').value.trim(),
+                'Description': document.getElementById('cb-desc').value.trim()
+            };
+
+            // Switch view to the month of the newly added/edited item (Timezone Safe)
+            const dateParts = updatedEntryData.Date.split('-');
+            if (dateParts.length >= 2) {
+                currentCashbookMonth = `${dateParts[0]}-${dateParts[1]}`;
+            }
+
+            let commitMsg = '';
+            let backupCashbook = JSON.parse(JSON.stringify(appData.cashbook)); // Deep copy for safe rollback
+
+            if (editId) {
+                // Edit existing entry
+                const index = appData.cashbook.findIndex(e => e.ID === editId);
+                if (index > -1) {
+                    appData.cashbook[index] = { ...appData.cashbook[index], ...updatedEntryData };
+                    commitMsg = `Edit cashbook entry: ₹${updatedEntryData.Amount}`;
+                }
+            } else {
+                // Add new entry
+                const newEntry = {
+                    'ID': 'CB-' + Date.now(),
+                    ...updatedEntryData
+                };
+                appData.cashbook.push(newEntry);
+                commitMsg = `Add cashbook entry: ₹${newEntry.Amount} ${newEntry['Transaction Type']}`;
+            }
+
+            try {
+                await updateGitHubFile('cashbook.csv', appData.cashbook, commitMsg);
+                renderCashbookUI();
+                closeModal('add-cashbook-modal');
+                showToast(editId ? 'Entry updated successfully!' : 'Entry added successfully!');
+            } catch (error) {
+                console.error(error);
+                appData.cashbook = backupCashbook; // Rollback
+                showToast(`Error: ${error.message}`, 'error'); 
+            } finally {
+                btn.innerHTML = originalBtnText.includes('Update') ? 'Update Entry' : 'Save Entry';
+                btn.disabled = false;
+            }
+        }
+
+        function editCashbookEntry(entryId) {
+            const entry = appData.cashbook.find(e => e.ID === entryId);
+            if(!entry) return;
+
+            // Populate form fields
+            document.getElementById('cb-edit-id').value = entry.ID;
+            document.getElementById('cb-type').value = entry['Transaction Type'];
+            document.getElementById('cb-amount').value = entry.Amount;
+            document.getElementById('cb-date').value = entry.Date;
+            document.getElementById('cb-time').value = entry.Time || '';
+            document.getElementById('cb-mode').value = entry['Payment Mode'];
+            document.getElementById('cb-desc').value = entry.Description;
+            document.getElementById('cb-person').value = entry.Person || '';
+
+            // Update modal UI for editing
+            document.getElementById('cb-modal-title').textContent = 'Edit Cashbook Entry';
+            document.getElementById('btn-save-cashbook').innerHTML = 'Update Entry';
+            
+            document.getElementById('add-cashbook-modal').classList.remove('hidden');
+        }
+
+        async function deleteCashbookEntry(entryId) {
+            if(!confirm("Are you sure you want to delete this cashbook entry?")) return;
+
+            const entryIndex = appData.cashbook.findIndex(e => e.ID === entryId);
+            if(entryIndex === -1) return;
+
+            toggleLoader(true);
+            // Remove the entry from the local array
+            const deletedEntry = appData.cashbook.splice(entryIndex, 1)[0]; 
+
+            try {
+                // Update GitHub file without the deleted entry
+                await updateGitHubFile('cashbook.csv', appData.cashbook, `Delete cashbook entry: ₹${deletedEntry.Amount}`);
+                renderCashbookUI();
+                showToast('Entry deleted successfully!');
+            } catch (error) {
+                console.error(error);
+                // Rollback if GitHub update fails
+                appData.cashbook.splice(entryIndex, 0, deletedEntry); 
+                showToast(`Error: ${error.message}`, 'error');
+            } finally {
+                toggleLoader(false);
+            }
+        }
+
+        // Initialize App on Load
+        window.onload = initAuth;
+    </script>
+</body>
+</html>
