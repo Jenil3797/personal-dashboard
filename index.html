@@ -633,7 +633,6 @@
             const timestamp = new Date().getTime();
             const url = `https://api.github.com/repos/${user}/${repo}/contents/${filename}?t=${timestamp}`;
 
-            // Removed 'Cache-Control' header to fix the CORS issue! Using browser native 'cache' option instead.
             const response = await fetch(url, {
                 headers: { 
                     'Authorization': `token ${pat}`, 
@@ -682,7 +681,7 @@
             }
             
             const data = await response.json();
-            fileSHAs[filename] = data.content.sha;
+            fileSHAs[filename] = data.content.sha; // Update with the new hash so subsequent updates work!
             return data;
         }
 
@@ -692,6 +691,7 @@
         async function loadAllData() {
             toggleLoader(true);
             try {
+                // We let errors throw naturally now so they don't silently fail!
                 const [tasks, cashbook] = await Promise.all([
                     fetchGitHubFile('tasks.csv'), 
                     fetchGitHubFile('cashbook.csv')
