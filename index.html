@@ -159,7 +159,7 @@
                         </button>
                     </div>
                     
-                    <!-- Metrics Grid (2 columns for 3 rows) -->
+                    <!-- Metrics Grid -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mb-8">
                         <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
                             <div class="flex items-center justify-between mb-4">
@@ -669,7 +669,14 @@
                 }
             });
 
-            if (!response.ok) throw new Error(`Failed to fetch ${filename}`);
+            if (!response.ok) {
+                // If it's just a 404 (file not created yet), safely return empty array.
+                if (response.status === 404) return [];
+                
+                // If it's a 401 (Bad PAT) or other error, throw it so the user sees it!
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.message || `Failed to fetch ${filename} (Status: ${response.status})`);
+            }
             
             const data = await response.json();
             fileSHAs[filename] = data.sha;
@@ -715,9 +722,10 @@
         async function loadAllData() {
             toggleLoader(true);
             try {
+                // We let errors throw naturally now so they don't silently fail!
                 const [tasks, cashbook] = await Promise.all([
-                    fetchGitHubFile('tasks.csv').catch(() => []), 
-                    fetchGitHubFile('cashbook.csv').catch(() => [])
+                    fetchGitHubFile('tasks.csv'), 
+                    fetchGitHubFile('cashbook.csv')
                 ]);
                 
                 appData.tasks = tasks;
@@ -729,7 +737,7 @@
                 showToast('Data Synced Successfully', 'success');
             } catch (error) {
                 console.error(error);
-                showToast('Error syncing data. Check credentials.', 'error');
+                showToast(`Sync Error: ${error.message}`, 'error');
             } finally {
                 toggleLoader(false);
             }
