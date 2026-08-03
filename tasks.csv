@@ -1,3 +1,4 @@
 ID,Task Name,Description,Priority,Issue Date,Issue Time,Due Date,Status,Completed Date,Completed Time
 TSK-1785732618616,Logo,Add logo to personal dashboard,Low,2026-08-03,10:19,,Pending,,
 TSK-1785732712343,Task list,Pending task list should be arranged according to priority,High,2026-08-03,10:21,,Pending,,
+TSK-1785740100351,New Modules,Add notes and event module,Medium,2026-08-03,12:24,,Pending,,
