@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Personal Dashboard</title>
-    
-    <!-- Tailwind CSS -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='2' y='2' width='12' height='12' rx='4' fill='%233B82F6'/><rect x='18' y='2' width='12' height='12' rx='4' fill='%2360A5FA'/><rect x='2' y='18' width='12' height='12' rx='4' fill='%2393C5FD'/><rect x='18' y='18' width='12' height='12' rx='4' fill='%232563EB'/></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Include Phosphor Icons for UI elements -->
     
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -178,7 +178,7 @@
             </header>
 
             <div class="p-4 md:p-8 max-w-7xl mx-auto pb-8">
-                
+                <!-- OVERVIEW TAB -->
                 <div id="tab-overview" class="tab-content block">
                     <div class="flex justify-between items-center mb-6 hidden md:flex">
                         <h2 class="text-2xl font-bold text-slate-800">Overview</h2>
@@ -187,8 +187,8 @@
                         </button>
                     </div>
                     
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
-                        <div class="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mb-8">
+                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
                             <div class="flex items-center justify-between mb-4">
                                 <h3 class="text-slate-500 text-sm font-semibold">Total Tasks</h3>
                                 <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
@@ -544,28 +544,39 @@
 
     <!-- Events Modal (Add/Edit) -->
     <div id="add-event-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all">
-            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden transform transition-all">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
                 <h3 id="event-modal-title" class="font-bold text-lg text-slate-800">Add Calendar Event</h3>
                 <button onclick="closeModal('add-event-modal')" class="text-slate-400 hover:text-slate-600 transition"><i class="ph ph-x text-xl"></i></button>
             </div>
             <form id="form-add-event" onsubmit="handleSaveEvent(event)" class="p-6 space-y-4">
                 <input type="hidden" id="event-edit-id" value="">
-                <div>
-                    <label class="block text-sm font-semibold mb-1">Event Date</label>
-                    <input type="date" id="event-date" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold mb-1">Event Type</label>
-                    <select id="event-type" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none bg-white">
-                        <option value="Birthday" class="text-rose-500">🎂 Birthday</option>
-                        <option value="Anniversary" class="text-purple-500">🥂 Anniversary</option>
-                        <option value="Other" class="text-blue-500">📅 Other Event</option>
-                    </select>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Event Date</label>
+                        <input type="date" id="event-date" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Event Type</label>
+                        <select id="event-type" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none bg-white">
+                            <option value="Birthday" class="text-rose-500">🎂 Birthday</option>
+                            <option value="Anniversary" class="text-purple-500">🥂 Anniversary</option>
+                            <option value="Other" class="text-blue-500">📅 Other</option>
+                        </select>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-semibold mb-1">Event Title</label>
                     <input type="text" id="event-title" required placeholder="e.g., Mom's Birthday" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Repeat</label>
+                    <select id="event-repeat" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none bg-white">
+                        <option value="Never">One day (Never)</option>
+                        <option value="Daily">Every day</option>
+                        <option value="Monthly">Monthly</option>
+                        <option value="Yearly">Yearly</option>
+                    </select>
                 </div>
                 <div class="pt-4 flex justify-end gap-3">
                     <button type="button" onclick="closeModal('add-event-modal')" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition">Cancel</button>
@@ -1327,30 +1338,54 @@
             const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-            // Extract events for THIS specific month
-            const currentMonthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
-            const monthEvents = appData.events.filter(e => e.Date && e.Date.startsWith(currentMonthPrefix));
-            monthEvents.sort((a,b) => new Date(a.Date) - new Date(b.Date));
-
             // Render Empty leading days
             for(let i = 0; i < firstDay; i++) {
                 grid.innerHTML += `<div class="p-2 md:p-3 bg-transparent rounded-lg"></div>`;
             }
 
-            // Render Days
+            // Calculate occurrences for this specific month
+            const monthOccurrences = [];
             const todayStr = getLocalDateString();
-            
+
+            for(let day = 1; day <= daysInMonth; day++) {
+                const currentDate = new Date(year, month, day);
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                appData.events.forEach(e => {
+                    if (!e.Date) return;
+                    const [ey, em, ed] = e.Date.split('-').map(Number);
+                    const eventStartDate = new Date(ey, em - 1, ed);
+
+                    // Check if current calendar day is on or after the event's start date
+                    if (currentDate >= eventStartDate) {
+                        let occurs = false;
+                        if (!e.Repeat || e.Repeat === 'Never') {
+                            occurs = (year === ey && month === em - 1 && day === ed);
+                        } else if (e.Repeat === 'Daily') {
+                            occurs = true;
+                        } else if (e.Repeat === 'Monthly') {
+                            if (day === ed) occurs = true;
+                        } else if (e.Repeat === 'Yearly') {
+                            if (month === em - 1 && day === ed) occurs = true;
+                        }
+
+                        if (occurs) {
+                            monthOccurrences.push({ ...e, displayDateStr: dateStr, displayDay: day });
+                        }
+                    }
+                });
+            }
+
+            // Render Days
             for(let day = 1; day <= daysInMonth; day++) {
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 const isToday = dateStr === todayStr;
                 
-                // Find events for this day
-                const dayEvents = monthEvents.filter(e => e.Date === dateStr);
+                const dayEvents = monthOccurrences.filter(e => e.displayDay === day);
                 
                 let dotsHtml = '';
                 if(dayEvents.length > 0) {
                     dotsHtml = '<div class="flex justify-center mt-1 flex-wrap max-w-[20px] mx-auto">';
-                    // Max 3 dots so it doesn't break UI
                     dayEvents.slice(0,3).forEach(e => {
                         const typeClass = e.Type === 'Birthday' ? 'birthday' : e.Type === 'Anniversary' ? 'anniversary' : 'other';
                         dotsHtml += `<span class="event-dot ${typeClass}"></span>`;
@@ -1366,19 +1401,26 @@
                 `;
             }
 
+            // Extract unique events to list on the right panel (so 'Daily' doesn't flood the list 30 times)
+            const uniqueMonthEventsMap = new Map();
+            monthOccurrences.forEach(occ => {
+                if (!uniqueMonthEventsMap.has(occ.ID)) uniqueMonthEventsMap.set(occ.ID, occ);
+            });
+            const uniqueEvents = Array.from(uniqueMonthEventsMap.values());
+            uniqueEvents.sort((a,b) => a.displayDay - b.displayDay);
+
             // Render Event List for the month
-            if(monthEvents.length === 0) {
+            if(uniqueEvents.length === 0) {
                 eventsList.innerHTML = `<div class="text-center text-slate-400 py-8 italic text-sm">No events this month</div>`;
             } else {
-                monthEvents.forEach(e => {
+                uniqueEvents.forEach(e => {
                     let icon, color;
                     if(e.Type === 'Birthday') { icon = 'ph-cake'; color = 'text-rose-500 bg-rose-50'; }
                     else if(e.Type === 'Anniversary') { icon = 'ph-heart'; color = 'text-purple-500 bg-purple-50'; }
                     else { icon = 'ph-calendar-star'; color = 'text-blue-500 bg-blue-50'; }
 
-                    // Format date nice
-                    const d = new Date(e.Date);
-                    const niceDate = d.toLocaleString('default', { month: 'short', day: 'numeric' });
+                    const niceDate = new Date(e.displayDateStr).toLocaleString('default', { month: 'short', day: 'numeric' });
+                    const repeatBadge = (e.Repeat && e.Repeat !== 'Never') ? `<span class="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded text-[10px] ml-1">${e.Repeat}</span>` : '';
 
                     eventsList.innerHTML += `
                         <div class="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl hover:shadow-sm transition group">
@@ -1387,7 +1429,7 @@
                             </div>
                             <div class="flex-1 min-w-0">
                                 <h4 class="font-bold text-slate-800 text-sm truncate">${e.Title}</h4>
-                                <p class="text-xs font-medium text-slate-500">${niceDate} • <span class="uppercase tracking-wider opacity-70">${e.Type}</span></p>
+                                <p class="text-xs font-medium text-slate-500">${niceDate} • <span class="uppercase tracking-wider opacity-70">${e.Type}</span> ${repeatBadge}</p>
                             </div>
                             <div class="shrink-0 flex opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button onclick="editEvent('${e.ID}')" class="p-1.5 text-slate-400 hover:text-blue-500 transition"><i class="ph ph-pencil-simple text-lg"></i></button>
@@ -1403,6 +1445,7 @@
             document.getElementById('form-add-event').reset();
             document.getElementById('event-edit-id').value = '';
             document.getElementById('event-date').value = dateStr;
+            document.getElementById('event-repeat').value = 'Never';
             document.getElementById('event-modal-title').textContent = 'Add Calendar Event';
             document.getElementById('btn-save-event').innerHTML = 'Save Event';
             openModal('add-event-modal');
@@ -1420,6 +1463,7 @@
                 'Date': document.getElementById('event-date').value,
                 'Type': document.getElementById('event-type').value,
                 'Title': document.getElementById('event-title').value.trim(),
+                'Repeat': document.getElementById('event-repeat').value
             };
 
             let commitMsg = '';
@@ -1463,6 +1507,7 @@
             document.getElementById('event-date').value = ev.Date;
             document.getElementById('event-type').value = ev.Type;
             document.getElementById('event-title').value = ev.Title;
+            document.getElementById('event-repeat').value = ev.Repeat || 'Never';
             document.getElementById('event-modal-title').textContent = 'Edit Event';
             document.getElementById('btn-save-event').innerHTML = 'Update Event';
             document.getElementById('add-event-modal').classList.remove('hidden');
