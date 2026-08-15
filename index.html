@@ -37,6 +37,8 @@
         .event-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin: 0 1px; }
         .event-dot.birthday { background-color: #f43f5e; }
         .event-dot.anniversary { background-color: #8b5cf6; }
+        .event-dot.task-add { background-color: #f59e0b; }
+        .event-dot.task-done { background-color: #10b981; }
         .event-dot.other { background-color: #3b82f6; }
 
         /* Quill Editor overrides */
@@ -1374,6 +1376,22 @@
                         }
                     }
                 });
+
+                // Auto-inject tasks into calendar
+                appData.tasks.forEach(t => {
+                    if (t['Issue Date']) {
+                        const [ty, tm, td] = t['Issue Date'].split('-').map(Number);
+                        if (ty === year && (tm - 1) === month && td === day) {
+                            monthOccurrences.push({ ID: 'TADD-'+t.ID, Type: 'TaskAdded', Title: 'Task Added: ' + t['Task Name'], displayDateStr: dateStr, displayDay: day, isTaskEvent: true });
+                        }
+                    }
+                    if (t.Status === 'Completed' && t['Completed Date']) {
+                        const [cy, cm, cd] = t['Completed Date'].split('-').map(Number);
+                        if (cy === year && (cm - 1) === month && cd === day) {
+                            monthOccurrences.push({ ID: 'TDONE-'+t.ID, Type: 'TaskDone', Title: 'Task Done: ' + t['Task Name'], displayDateStr: dateStr, displayDay: day, isTaskEvent: true });
+                        }
+                    }
+                });
             }
 
             // Render Days
@@ -1387,7 +1405,12 @@
                 if(dayEvents.length > 0) {
                     dotsHtml = '<div class="flex justify-center mt-1 flex-wrap max-w-[20px] mx-auto">';
                     dayEvents.slice(0,3).forEach(e => {
-                        const typeClass = e.Type === 'Birthday' ? 'birthday' : e.Type === 'Anniversary' ? 'anniversary' : 'other';
+                        let typeClass = 'other';
+                        if(e.Type === 'Birthday') typeClass = 'birthday';
+                        else if(e.Type === 'Anniversary') typeClass = 'anniversary';
+                        else if(e.Type === 'TaskAdded') typeClass = 'task-add';
+                        else if(e.Type === 'TaskDone') typeClass = 'task-done';
+                        
                         dotsHtml += `<span class="event-dot ${typeClass}"></span>`;
                     });
                     dotsHtml += '</div>';
@@ -1414,13 +1437,21 @@
                 eventsList.innerHTML = `<div class="text-center text-slate-400 py-8 italic text-sm">No events this month</div>`;
             } else {
                 uniqueEvents.forEach(e => {
-                    let icon, color;
+                    let icon, color, typeLabel = e.Type;
                     if(e.Type === 'Birthday') { icon = 'ph-cake'; color = 'text-rose-500 bg-rose-50'; }
                     else if(e.Type === 'Anniversary') { icon = 'ph-heart'; color = 'text-purple-500 bg-purple-50'; }
+                    else if(e.Type === 'TaskAdded') { icon = 'ph-clipboard-text'; color = 'text-amber-500 bg-amber-50'; typeLabel = 'Task Added'; }
+                    else if(e.Type === 'TaskDone') { icon = 'ph-check-circle'; color = 'text-emerald-500 bg-emerald-50'; typeLabel = 'Task Done'; }
                     else { icon = 'ph-calendar-star'; color = 'text-blue-500 bg-blue-50'; }
 
                     const niceDate = new Date(e.displayDateStr).toLocaleString('default', { month: 'short', day: 'numeric' });
                     const repeatBadge = (e.Repeat && e.Repeat !== 'Never') ? `<span class="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded text-[10px] ml-1">${e.Repeat}</span>` : '';
+
+                    // Hide edit/delete actions for dynamically injected task events
+                    const actionButtons = e.isTaskEvent ? '' : `
+                        <button onclick="editEvent('${e.ID}')" class="p-1.5 text-slate-400 hover:text-blue-500 transition"><i class="ph ph-pencil-simple text-lg"></i></button>
+                        <button onclick="deleteEvent('${e.ID}')" class="p-1.5 text-slate-400 hover:text-red-500 transition"><i class="ph ph-trash text-lg"></i></button>
+                    `;
 
                     eventsList.innerHTML += `
                         <div class="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl hover:shadow-sm transition group">
@@ -1429,11 +1460,10 @@
                             </div>
                             <div class="flex-1 min-w-0">
                                 <h4 class="font-bold text-slate-800 text-sm truncate">${e.Title}</h4>
-                                <p class="text-xs font-medium text-slate-500">${niceDate} • <span class="uppercase tracking-wider opacity-70">${e.Type}</span> ${repeatBadge}</p>
+                                <p class="text-xs font-medium text-slate-500">${niceDate} • <span class="uppercase tracking-wider opacity-70">${typeLabel}</span> ${repeatBadge}</p>
                             </div>
                             <div class="shrink-0 flex opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onclick="editEvent('${e.ID}')" class="p-1.5 text-slate-400 hover:text-blue-500 transition"><i class="ph ph-pencil-simple text-lg"></i></button>
-                                <button onclick="deleteEvent('${e.ID}')" class="p-1.5 text-slate-400 hover:text-red-500 transition"><i class="ph ph-trash text-lg"></i></button>
+                                ${actionButtons}
                             </div>
                         </div>
                     `;
