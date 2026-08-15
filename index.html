@@ -2,24 +2,50 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Personal Dashboard</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- Quill.js for Rich Text Notes -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+
     <style>
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        #toast-container { transition: opacity 0.3s ease; }
+        #toast-container { transition: opacity 0.3s ease, transform 0.3s ease; }
         
+        /* Nav Styles */
         .nav-btn.active { background-color: #2563eb; color: #ffffff; }
         .nav-btn:not(.active) { color: #94a3b8; }
         .nav-btn:not(.active):hover { background-color: #1e293b; color: #e2e8f0; }
         
+        /* Filters */
         .month-btn.active { background-color: #1e293b; color: #ffffff; border-color: #1e293b; }
         
+        /* Calendar Styles */
+        .cal-day.today { background-color: #eff6ff; border-color: #bfdbfe; font-weight: bold; color: #1d4ed8; }
+        .cal-day:hover { background-color: #f8fafc; cursor: pointer; }
+        .event-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin: 0 1px; }
+        .event-dot.birthday { background-color: #f43f5e; }
+        .event-dot.anniversary { background-color: #8b5cf6; }
+        .event-dot.other { background-color: #3b82f6; }
+
+        /* Quill Editor overrides */
+        .ql-container { font-family: inherit; font-size: 1rem; border-bottom-left-radius: 0.5rem; border-bottom-right-radius: 0.5rem; }
+        .ql-toolbar { border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; background: #f8fafc; }
+        .note-preview p { margin: 0; display: inline; }
+        ul[data-checked=true], ul[data-checked=false] { pointer-events: none; }
+
+        /* Loader */
         .loader {
             border: 3px solid #f3f3f3;
             border-top: 3px solid #2563eb;
@@ -31,21 +57,29 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans h-[100dvh] flex flex-col overflow-hidden">
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col overflow-hidden">
 
-    <div id="toast-container" class="fixed top-4 right-4 z-[60] opacity-0 pointer-events-none transition-opacity duration-300">
-        <div id="toast-message" class="bg-white px-6 py-3 rounded-lg shadow-lg border-l-4 font-medium">
+    <div id="toast-container" class="fixed top-4 right-4 z-50 opacity-0 transform translate-y-[-20px] pointer-events-none transition-all duration-300">
+        <div id="toast-message" class="bg-white px-6 py-3 rounded-lg shadow-lg border-l-4 font-medium flex items-center gap-2">
             Message goes here
         </div>
     </div>
 
-    <div id="global-loader" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-[60] hidden flex-col items-center justify-center">
+    <div id="global-loader" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 hidden flex-col items-center justify-center">
         <div class="loader mb-4" style="width: 48px; height: 48px;"></div>
         <p class="text-slate-600 font-medium">Syncing with GitHub...</p>
     </div>
 
-    <div id="login-view" class="bg-slate-50 h-[100dvh] w-full absolute inset-0 z-50 flex items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
+    <div id="login-view" class="bg-slate-50 min-h-screen flex items-center justify-center p-4 w-full absolute inset-0 z-40 hidden">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
+            <div class="flex justify-center mb-4">
+                <svg width="48" height="48" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="2" width="12" height="12" rx="4" fill="#3B82F6"/>
+                    <rect x="18" y="2" width="12" height="12" rx="4" fill="#60A5FA"/>
+                    <rect x="2" y="18" width="12" height="12" rx="4" fill="#93C5FD"/>
+                    <rect x="18" y="18" width="12" height="12" rx="4" fill="#1E3A8A"/>
+                </svg>
+            </div>
             <div class="text-center mb-6">
                 <h1 class="text-2xl font-bold text-slate-900">Welcome Back</h1>
                 <p class="text-sm text-slate-500 mt-1">Connect your GitHub repository to continue</p>
@@ -56,7 +90,6 @@
                     <label class="block text-sm font-semibold mb-1">GitHub PAT</label>
                     <input type="password" id="input-pat" required placeholder="ghp_xxxxxxxxxxxx" 
                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <p class="text-xs text-slate-400 mt-1">Requires 'repo' scope</p>
                 </div>
                 <div>
                     <label class="block text-sm font-semibold mb-1">GitHub Username</label>
@@ -68,7 +101,7 @@
                     <input type="text" id="input-repo" required placeholder="e.g., personal-dashboard"
                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
-                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition shadow-md hover:shadow-lg">
                     Connect & Save
                 </button>
             </form>
@@ -77,26 +110,39 @@
 
     <div id="app-view" class="w-full h-[100dvh] flex flex-col md:flex-row hidden overflow-hidden">
         
-        <nav class="bg-slate-900 text-white md:w-64 w-full flex-shrink-0 md:flex flex-col z-20 order-last md:order-first shadow-[0_-4px_15px_rgba(0,0,0,0.15)] md:shadow-none pb-safe">
-            <div class="p-6 hidden md:block border-b border-slate-800">
-                <h2 class="text-2xl font-bold text-white flex items-center gap-2">
-                    <i class="ph ph-squares-four text-blue-500"></i>
-                    Dashboard
-                </h2>
+        <!-- Sidebar & Mobile Bottom Nav -->
+        <nav class="bg-slate-900 text-white md:w-64 w-full flex-shrink-0 md:flex flex-col z-20 order-last md:order-first shadow-[0_-4px_15px_rgba(0,0,0,0.15)] md:shadow-none">
+            <div class="p-6 hidden md:flex items-center gap-3 border-b border-slate-800">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="2" width="12" height="12" rx="4" fill="#3B82F6"/>
+                    <rect x="18" y="2" width="12" height="12" rx="4" fill="#60A5FA"/>
+                    <rect x="2" y="18" width="12" height="12" rx="4" fill="#93C5FD"/>
+                    <rect x="18" y="18" width="12" height="12" rx="4" fill="#2563EB"/>
+                </svg>
+                <h2 class="text-xl font-bold text-white tracking-wide">Dashboard</h2>
             </div>
 
-            <div class="flex-1 flex md:flex-col justify-around md:justify-start px-2 py-3 md:p-4 gap-2 overflow-x-auto md:overflow-visible">
-                <button onclick="switchTab('tab-overview', this)" class="nav-btn active flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center px-2 sm:px-4 py-3 rounded-lg transition gap-1 md:gap-3">
+            <!-- Custom scrollbar for mobile navigation if it overflows -->
+            <div class="flex-1 flex md:flex-col justify-between md:justify-start px-2 py-2 md:p-4 gap-1 overflow-x-auto custom-scrollbar md:overflow-visible">
+                <button onclick="switchTab('tab-overview', this)" class="nav-btn active flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center p-2 sm:px-4 sm:py-3 rounded-lg transition gap-1 md:gap-3 min-w-[70px]">
                     <i class="ph ph-chart-line-up text-xl md:text-2xl"></i>
-                    <span class="text-xs md:text-sm font-medium">Overview</span>
+                    <span class="text-[10px] md:text-sm font-medium">Overview</span>
                 </button>
-                <button onclick="switchTab('tab-tasks', this)" class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center px-2 sm:px-4 py-3 rounded-lg transition gap-1 md:gap-3">
+                <button onclick="switchTab('tab-tasks', this)" class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center p-2 sm:px-4 sm:py-3 rounded-lg transition gap-1 md:gap-3 min-w-[70px]">
                     <i class="ph ph-check-square-offset text-xl md:text-2xl"></i>
-                    <span class="text-xs md:text-sm font-medium">Tasks</span>
+                    <span class="text-[10px] md:text-sm font-medium">Tasks</span>
                 </button>
-                <button onclick="switchTab('tab-cashbook', this)" class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center px-2 sm:px-4 py-3 rounded-lg transition gap-1 md:gap-3">
+                <button onclick="switchTab('tab-cashbook', this)" class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center p-2 sm:px-4 sm:py-3 rounded-lg transition gap-1 md:gap-3 min-w-[70px]">
                     <i class="ph ph-wallet text-xl md:text-2xl"></i>
-                    <span class="text-xs md:text-sm font-medium">Cashbook</span>
+                    <span class="text-[10px] md:text-sm font-medium">Cashbook</span>
+                </button>
+                <button onclick="switchTab('tab-notes', this)" class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center p-2 sm:px-4 sm:py-3 rounded-lg transition gap-1 md:gap-3 min-w-[70px]">
+                    <i class="ph ph-notebook text-xl md:text-2xl"></i>
+                    <span class="text-[10px] md:text-sm font-medium">Notes</span>
+                </button>
+                <button onclick="switchTab('tab-events', this)" class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center p-2 sm:px-4 sm:py-3 rounded-lg transition gap-1 md:gap-3 min-w-[70px]">
+                    <i class="ph ph-calendar-star text-xl md:text-2xl"></i>
+                    <span class="text-[10px] md:text-sm font-medium">Events</span>
                 </button>
             </div>
 
@@ -109,10 +155,18 @@
         </nav>
 
         <main class="flex-1 min-h-0 bg-slate-50 overflow-y-auto w-full relative">
-            <header class="md:hidden bg-white shadow-sm px-4 py-4 flex justify-between items-center sticky top-0 z-10">
-                <h1 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                    <i class="ph ph-squares-four text-blue-600"></i> My Dashboard
-                </h1>
+            
+            <!-- Mobile Header -->
+            <header class="md:hidden bg-white shadow-sm px-4 py-3 flex justify-between items-center sticky top-0 z-10">
+                <div class="flex items-center gap-2">
+                    <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="2" y="2" width="12" height="12" rx="4" fill="#3B82F6"/>
+                        <rect x="18" y="2" width="12" height="12" rx="4" fill="#60A5FA"/>
+                        <rect x="2" y="18" width="12" height="12" rx="4" fill="#93C5FD"/>
+                        <rect x="18" y="18" width="12" height="12" rx="4" fill="#2563EB"/>
+                    </svg>
+                    <h1 class="text-lg font-bold text-slate-800">Dashboard</h1>
+                </div>
                 <div class="flex gap-2">
                     <button onclick="loadAllData()" class="text-slate-500 p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition">
                         <i class="ph ph-arrows-clockwise text-xl"></i>
@@ -123,7 +177,7 @@
                 </div>
             </header>
 
-            <div class="p-4 md:p-8 max-w-6xl mx-auto pb-8">
+            <div class="p-4 md:p-8 max-w-7xl mx-auto pb-8">
                 
                 <div id="tab-overview" class="tab-content block">
                     <div class="flex justify-between items-center mb-6 hidden md:flex">
@@ -133,65 +187,65 @@
                         </button>
                     </div>
                     
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mb-8">
-                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
+                        <div class="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-slate-100">
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-slate-500 text-xs md:text-sm font-semibold">Total Tasks</h3>
-                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                <h3 class="text-slate-500 text-sm font-semibold">Total Tasks</h3>
+                                <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
                                     <i class="ph ph-list-numbers text-xl"></i>
                                 </div>
                             </div>
-                            <p class="text-2xl md:text-3xl font-bold text-slate-800" id="metric-total-tasks">0</p>
+                            <p class="text-3xl font-bold text-slate-800" id="metric-total-tasks">0</p>
                         </div>
                         
-                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+                        <div class="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-slate-100">
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-slate-500 text-xs md:text-sm font-semibold">Pending Tasks</h3>
-                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                                <h3 class="text-slate-500 text-sm font-semibold">Pending Tasks</h3>
+                                <div class="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
                                     <i class="ph ph-hourglass-high text-xl"></i>
                                 </div>
                             </div>
-                            <p class="text-2xl md:text-3xl font-bold text-slate-800" id="metric-pending-tasks">0</p>
+                            <p class="text-3xl font-bold text-slate-800" id="metric-pending-tasks">0</p>
                         </div>
 
-                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+                        <div class="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-slate-100">
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-slate-500 text-xs md:text-sm font-semibold">Cash Balance</h3>
-                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                                <h3 class="text-slate-500 text-sm font-semibold">Cash Balance</h3>
+                                <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600">
                                     <i class="ph ph-money text-xl"></i>
                                 </div>
                             </div>
-                            <p class="text-2xl md:text-3xl font-bold text-slate-800">₹<span id="metric-cash-balance">0</span></p>
+                            <p class="text-3xl font-bold text-slate-800">₹<span id="metric-cash-balance">0</span></p>
                         </div>
 
-                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+                        <div class="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-slate-100">
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-slate-500 text-xs md:text-sm font-semibold">Online Balance</h3>
-                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                                <h3 class="text-slate-500 text-sm font-semibold">Online Balance</h3>
+                                <div class="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
                                     <i class="ph ph-bank text-xl"></i>
                                 </div>
                             </div>
-                            <p class="text-2xl md:text-3xl font-bold text-slate-800">₹<span id="metric-online-balance">0</span></p>
+                            <p class="text-3xl font-bold text-slate-800">₹<span id="metric-online-balance">0</span></p>
                         </div>
 
-                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+                        <div class="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-slate-100">
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-slate-500 text-xs md:text-sm font-semibold">You will get</h3>
-                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                                <h3 class="text-slate-500 text-sm font-semibold">You will get</h3>
+                                <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
                                     <i class="ph ph-trend-up text-xl"></i>
                                 </div>
                             </div>
-                            <p class="text-2xl md:text-3xl font-bold text-emerald-600">₹<span id="metric-will-get">0</span></p>
+                            <p class="text-3xl font-bold text-emerald-600">₹<span id="metric-will-get">0</span></p>
                         </div>
 
-                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+                        <div class="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-slate-100">
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-slate-500 text-xs md:text-sm font-semibold">You will give</h3>
-                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
+                                <h3 class="text-slate-500 text-sm font-semibold">You will give</h3>
+                                <div class="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-600">
                                     <i class="ph ph-trend-down text-xl"></i>
                                 </div>
                             </div>
-                            <p class="text-2xl md:text-3xl font-bold text-rose-600">₹<span id="metric-will-give">0</span></p>
+                            <p class="text-3xl font-bold text-rose-600">₹<span id="metric-will-give">0</span></p>
                         </div>
                     </div>
                 </div>
@@ -200,26 +254,26 @@
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-2xl font-bold text-slate-800 hidden md:block">Task Manager</h2>
                         <h2 class="text-xl font-bold text-slate-800 md:hidden">Tasks</h2>
-                        <button onclick="openModal('add-task-modal')" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition flex items-center gap-2 shadow-sm">
+                        <button onclick="openModal('add-task-modal')" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition flex items-center gap-2 shadow-md hover:shadow-lg">
                             <i class="ph ph-plus-circle text-xl"></i> Add Task
                         </button>
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div class="bg-slate-50 px-5 py-4 border-b border-slate-200 flex justify-between items-center">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                            <div class="bg-slate-50 px-5 py-4 border-b border-slate-100 flex justify-between items-center">
                                 <h3 class="font-bold text-slate-700">Pending</h3>
                                 <span id="count-pending" class="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold">0</span>
                             </div>
-                            <ul id="list-pending-tasks" class="divide-y divide-slate-100 max-h-[600px] overflow-y-auto"></ul>
+                            <ul id="list-pending-tasks" class="divide-y divide-slate-50 max-h-[600px] overflow-y-auto custom-scrollbar"></ul>
                         </div>
 
-                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden opacity-80">
-                            <div class="bg-slate-50 px-5 py-4 border-b border-slate-200 flex justify-between items-center">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden opacity-90">
+                            <div class="bg-slate-50 px-5 py-4 border-b border-slate-100 flex justify-between items-center">
                                 <h3 class="font-bold text-slate-700">Completed</h3>
                                 <span id="count-completed" class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">0</span>
                             </div>
-                            <ul id="list-completed-tasks" class="divide-y divide-slate-100 max-h-[600px] overflow-y-auto"></ul>
+                            <ul id="list-completed-tasks" class="divide-y divide-slate-50 max-h-[600px] overflow-y-auto custom-scrollbar"></ul>
                         </div>
                     </div>
                 </div>
@@ -228,19 +282,18 @@
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-2xl font-bold text-slate-800 hidden md:block">Cashbook</h2>
                         <h2 class="text-xl font-bold text-slate-800 md:hidden">Cashbook</h2>
-                        <button onclick="openModal('add-cashbook-modal')" class="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition flex items-center gap-2 shadow-sm">
+                        <button onclick="openModal('add-cashbook-modal')" class="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition flex items-center gap-2 shadow-md hover:shadow-lg">
                             <i class="ph ph-plus-circle text-xl"></i> Add Entry
                         </button>
                     </div>
 
                     <div id="person-balances-container" class="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4 hidden"></div>
-
                     <div class="mb-4 flex gap-2 overflow-x-auto pb-2 custom-scrollbar" id="cashbook-month-filters"></div>
 
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden overflow-x-auto">
                         <table class="w-full text-left border-collapse min-w-[600px]">
                             <thead>
-                                <tr class="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
+                                <tr class="bg-slate-50 text-slate-500 text-sm border-b border-slate-100">
                                     <th class="p-4 font-semibold w-28">Date</th>
                                     <th class="p-4 font-semibold w-24">Time</th>
                                     <th class="p-4 font-semibold">Description</th>
@@ -250,12 +303,70 @@
                                     <th class="p-4 font-semibold w-24 text-center">Action</th>
                                 </tr>
                             </thead>
-                            <tbody id="list-cashbook-entries" class="divide-y divide-slate-100 text-sm"></tbody>
+                            <tbody id="list-cashbook-entries" class="divide-y divide-slate-50 text-sm"></tbody>
                         </table>
                         
-                        <div class="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-6 text-sm">
+                        <div class="bg-slate-50 border-t border-slate-100 p-4 flex justify-end gap-6 text-sm">
                             <div class="font-medium text-slate-600">Total Cash: <span id="cb-total-cash" class="text-slate-800 font-bold ml-1">₹0</span></div>
                             <div class="font-medium text-slate-600">Total Online: <span id="cb-total-online" class="text-slate-800 font-bold ml-1">₹0</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-notes" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-slate-800 hidden md:block">My Notes</h2>
+                        <h2 class="text-xl font-bold text-slate-800 md:hidden">Notes</h2>
+                        <button onclick="openModal('add-note-modal')" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition flex items-center gap-2 shadow-md hover:shadow-lg">
+                            <i class="ph ph-plus-circle text-xl"></i> Add Note
+                        </button>
+                    </div>
+
+                    <div id="list-notes" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <!-- Notes injected here -->
+                    </div>
+                </div>
+
+                <div id="tab-events" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-slate-800 hidden md:block">Calendar & Events</h2>
+                        <h2 class="text-xl font-bold text-slate-800 md:hidden">Events</h2>
+                        <button onclick="openModal('add-event-modal')" class="bg-rose-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-rose-700 transition flex items-center gap-2 shadow-md hover:shadow-lg">
+                            <i class="ph ph-plus-circle text-xl"></i> Add Event
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Calendar Graphic -->
+                        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                            <div class="flex justify-between items-center mb-6">
+                                <button onclick="changeMonth(-1)" class="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition"><i class="ph ph-caret-left text-xl"></i></button>
+                                <h3 id="cal-month-year" class="text-lg font-bold text-slate-800">July 2026</h3>
+                                <button onclick="changeMonth(1)" class="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition"><i class="ph ph-caret-right text-xl"></i></button>
+                            </div>
+                            
+                            <div class="grid grid-cols-7 gap-1 text-center mb-2">
+                                <div class="text-xs font-bold text-slate-400 uppercase py-2">Sun</div>
+                                <div class="text-xs font-bold text-slate-400 uppercase py-2">Mon</div>
+                                <div class="text-xs font-bold text-slate-400 uppercase py-2">Tue</div>
+                                <div class="text-xs font-bold text-slate-400 uppercase py-2">Wed</div>
+                                <div class="text-xs font-bold text-slate-400 uppercase py-2">Thu</div>
+                                <div class="text-xs font-bold text-slate-400 uppercase py-2">Fri</div>
+                                <div class="text-xs font-bold text-slate-400 uppercase py-2">Sat</div>
+                            </div>
+                            <div id="calendar-grid" class="grid grid-cols-7 gap-1 lg:gap-2 text-center auto-rows-fr">
+                                <!-- Calendar Cells Injected Here -->
+                            </div>
+                        </div>
+
+                        <!-- Monthly Events List -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col max-h-[500px]">
+                            <div class="bg-slate-50 px-5 py-4 border-b border-slate-100">
+                                <h3 class="font-bold text-slate-700">Events This Month</h3>
+                            </div>
+                            <div id="list-month-events" class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
+                                <!-- Events injected here -->
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -264,21 +375,24 @@
         </main>
     </div>
 
+    
+    <!-- Task Modal (Add/Edit) -->
     <div id="add-task-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all">
-            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-lg text-slate-800">Add New Task</h3>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 id="task-modal-title" class="font-bold text-lg text-slate-800">Add New Task</h3>
                 <button onclick="closeModal('add-task-modal')" class="text-slate-400 hover:text-slate-600 transition"><i class="ph ph-x text-xl"></i></button>
             </div>
             <form id="form-add-task" onsubmit="handleAddTask(event)" class="p-6 space-y-4">
+                <input type="hidden" id="task-edit-id" value="">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-semibold mb-1">Issue Date</label>
-                        <input type="date" id="task-issue-date" readonly class="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-100 text-slate-500 cursor-not-allowed outline-none">
+                        <input type="date" id="task-issue-date" readonly class="w-full px-4 py-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-500 cursor-not-allowed outline-none">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Issue Time</label>
-                        <input type="time" id="task-issue-time" readonly class="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-100 text-slate-500 cursor-not-allowed outline-none">
+                        <input type="time" id="task-issue-time" readonly class="w-full px-4 py-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-500 cursor-not-allowed outline-none">
                     </div>
                 </div>
                 <div>
@@ -287,7 +401,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-semibold mb-1">Description (Optional)</label>
-                    <textarea id="task-desc" rows="3" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+                    <textarea id="task-desc" rows="3" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none custom-scrollbar"></textarea>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -313,36 +427,38 @@
         </div>
     </div>
 
+    <!-- Task Details Modal -->
     <div id="detail-task-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all">
-            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
                 <h3 class="font-bold text-lg text-slate-800">Task Details</h3>
                 <button onclick="closeModal('detail-task-modal')" class="text-slate-400 hover:text-slate-600 transition"><i class="ph ph-x text-xl"></i></button>
             </div>
             <div class="p-6">
                 <div class="mb-4 flex items-center justify-between">
-                    <h2 id="detail-name" class="text-xl font-bold text-slate-900">Task Name</h2>
-                    <span id="detail-priority" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">Priority</span>
+                    <h2 id="detail-name" class="text-xl font-bold text-slate-900 pr-4">Task Name</h2>
+                    <span id="detail-priority" class="px-3 py-1 rounded-full text-xs font-bold shrink-0">Priority</span>
                 </div>
-                <div class="bg-slate-50 p-4 rounded-lg mb-4 border border-slate-100">
-                    <p id="detail-desc" class="text-slate-700 whitespace-pre-wrap">Description goes here</p>
+                <div class="bg-slate-50 p-4 rounded-xl mb-4 border border-slate-100 max-h-[200px] overflow-y-auto custom-scrollbar">
+                    <p id="detail-desc" class="text-slate-700 whitespace-pre-wrap text-sm">Description goes here</p>
                 </div>
-                <div class="flex flex-col gap-2 text-sm text-slate-500">
-                    <p><i class="ph ph-calendar-plus mr-1"></i> Issued: <span id="detail-issue" class="font-medium text-slate-700"></span></p>
-                    <p><i class="ph ph-calendar-blank mr-1"></i> Due: <span id="detail-due" class="font-medium text-slate-700"></span></p>
-                    <p><i class="ph ph-check-circle mr-1"></i> Status: <span id="detail-status" class="font-medium text-slate-700"></span></p>
-                    <p id="detail-completed-wrap" class="hidden"><i class="ph ph-calendar-check mr-1"></i> Completed: <span id="detail-completed" class="font-medium text-slate-700"></span></p>
+                <div class="flex flex-col gap-2 text-sm text-slate-600 bg-white border border-slate-100 rounded-xl p-4 shadow-sm">
+                    <div class="flex items-center gap-2"><i class="ph ph-calendar-plus text-slate-400 text-lg"></i> <span class="w-16 text-slate-400">Issued:</span> <span id="detail-issue" class="font-medium"></span></div>
+                    <div class="flex items-center gap-2"><i class="ph ph-calendar-blank text-slate-400 text-lg"></i> <span class="w-16 text-slate-400">Due:</span> <span id="detail-due" class="font-medium"></span></div>
+                    <div class="flex items-center gap-2"><i class="ph ph-info text-slate-400 text-lg"></i> <span class="w-16 text-slate-400">Status:</span> <span id="detail-status" class="font-medium"></span></div>
+                    <div id="detail-completed-wrap" class="flex items-center gap-2 hidden"><i class="ph ph-calendar-check text-green-500 text-lg"></i> <span class="w-16 text-slate-400">Done:</span> <span id="detail-completed" class="font-medium text-green-600"></span></div>
                 </div>
                 <div class="mt-6 flex justify-end">
-                    <button onclick="closeModal('detail-task-modal')" class="bg-slate-200 text-slate-700 px-6 py-2 rounded-lg font-medium hover:bg-slate-300 transition">Close</button>
+                    <button onclick="closeModal('detail-task-modal')" class="bg-slate-100 text-slate-700 px-6 py-2 rounded-lg font-medium hover:bg-slate-200 transition">Close</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Cashbook Modal (Add/Edit) -->
     <div id="add-cashbook-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all">
-            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                 <h3 id="cb-modal-title" class="font-bold text-lg text-slate-800">Add Cashbook Entry</h3>
                 <button onclick="closeModal('add-cashbook-modal')" class="text-slate-400 hover:text-slate-600 transition"><i class="ph ph-x text-xl"></i></button>
             </div>
@@ -361,7 +477,6 @@
                         <input type="number" id="cb-amount" required min="0" step="0.01" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-mono">
                     </div>
                 </div>
-                
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-semibold mb-1">Date</label>
@@ -372,7 +487,6 @@
                         <input type="time" id="cb-time" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
                     </div>
                 </div>
-
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-semibold mb-1">Payment Mode</label>
@@ -386,12 +500,10 @@
                         <input type="text" id="cb-person" placeholder="Who was involved?" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
                     </div>
                 </div>
-
                 <div>
                     <label class="block text-sm font-semibold mb-1">Description</label>
                     <input type="text" id="cb-desc" required placeholder="What was this for?" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
                 </div>
-
                 <div class="pt-4 flex justify-end gap-3">
                     <button type="button" onclick="closeModal('add-cashbook-modal')" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition">Cancel</button>
                     <button type="submit" id="btn-save-cashbook" class="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition flex items-center gap-2">
@@ -402,10 +514,94 @@
         </div>
     </div>
 
+    <!-- Notes Modal (Add/Edit) -->
+    <div id="add-note-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+                <h3 id="note-modal-title" class="font-bold text-lg text-slate-800">Add New Note</h3>
+                <button onclick="closeModal('add-note-modal')" class="text-slate-400 hover:text-slate-600 transition"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            <div class="p-6 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4">
+                <input type="hidden" id="note-edit-id" value="">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Note Title</label>
+                    <input type="text" id="note-title" required placeholder="e.g., Weekly Meeting Specs" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-lg">
+                </div>
+                <div class="flex-1 flex flex-col min-h-[250px]">
+                    <label class="block text-sm font-semibold mb-1">Content</label>
+                    <!-- Quill Rich Text Editor Container -->
+                    <div id="quill-editor" class="bg-white flex-1 min-h-[250px] overflow-y-auto"></div>
+                </div>
+            </div>
+            <div class="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 shrink-0">
+                <button type="button" onclick="closeModal('add-note-modal')" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-200 rounded-lg transition">Cancel</button>
+                <button type="button" id="btn-save-note" onclick="handleSaveNote()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition flex items-center gap-2">
+                    Save Note
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Events Modal (Add/Edit) -->
+    <div id="add-event-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 id="event-modal-title" class="font-bold text-lg text-slate-800">Add Calendar Event</h3>
+                <button onclick="closeModal('add-event-modal')" class="text-slate-400 hover:text-slate-600 transition"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            <form id="form-add-event" onsubmit="handleSaveEvent(event)" class="p-6 space-y-4">
+                <input type="hidden" id="event-edit-id" value="">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Event Date</label>
+                    <input type="date" id="event-date" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Event Type</label>
+                    <select id="event-type" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none bg-white">
+                        <option value="Birthday" class="text-rose-500">🎂 Birthday</option>
+                        <option value="Anniversary" class="text-purple-500">🥂 Anniversary</option>
+                        <option value="Other" class="text-blue-500">📅 Other Event</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Event Title</label>
+                    <input type="text" id="event-title" required placeholder="e.g., Mom's Birthday" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none">
+                </div>
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal('add-event-modal')" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition">Cancel</button>
+                    <button type="submit" id="btn-save-event" class="bg-rose-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-rose-700 transition flex items-center gap-2">
+                        Save Event
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         let githubCreds = { pat: '', user: '', repo: '' };
-        let appData = { tasks: [], cashbook: [] };
+        
+        // Extended App Data State
+        let appData = {
+            tasks: [],
+            cashbook: [],
+            notes: [],
+            events: []
+        };
+        
+        const fileSHAs = { 
+            'tasks.csv': null, 
+            'cashbook.csv': null,
+            'notes.csv': null,
+            'events.csv': null
+        };
+        
         let currentCashbookMonth = '';
+        
+        // Calendar State
+        let calendarDate = new Date();
+        
+        // Quill Editor Instance
+        let quillEditor = null;
 
         function getLocalDateString() {
             const now = new Date();
@@ -419,18 +615,23 @@
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const msgEl = document.getElementById('toast-message');
-            msgEl.textContent = message;
             
+            let icon = '';
             if (type === 'error') {
-                msgEl.className = 'bg-white px-6 py-3 rounded-lg shadow-lg border-l-4 border-red-500 text-red-700 font-medium';
+                msgEl.className = 'bg-white px-6 py-3 rounded-lg shadow-xl border-l-4 border-red-500 text-red-700 font-medium flex items-center gap-2';
+                icon = '<i class="ph ph-warning-circle text-xl"></i>';
             } else if (type === 'success') {
-                msgEl.className = 'bg-white px-6 py-3 rounded-lg shadow-lg border-l-4 border-green-500 text-green-700 font-medium';
+                msgEl.className = 'bg-white px-6 py-3 rounded-lg shadow-xl border-l-4 border-green-500 text-green-700 font-medium flex items-center gap-2';
+                icon = '<i class="ph ph-check-circle text-xl"></i>';
             } else {
-                msgEl.className = 'bg-white px-6 py-3 rounded-lg shadow-lg border-l-4 border-blue-500 text-blue-700 font-medium';
+                msgEl.className = 'bg-white px-6 py-3 rounded-lg shadow-xl border-l-4 border-blue-500 text-blue-700 font-medium flex items-center gap-2';
+                icon = '<i class="ph ph-info text-xl"></i>';
             }
 
-            container.classList.remove('opacity-0', 'pointer-events-none');
-            setTimeout(() => container.classList.add('opacity-0', 'pointer-events-none'), 3000);
+            msgEl.innerHTML = icon + message;
+
+            container.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-[-20px]');
+            setTimeout(() => container.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-20px]'), 3000);
         }
 
         function toggleLoader(show) {
@@ -443,25 +644,37 @@
             if(modalId === 'add-cashbook-modal') {
                 document.getElementById('form-add-cashbook').reset();
                 document.getElementById('cb-date').value = getLocalDateString();
-                if (document.getElementById('cb-time')) {
-                    document.getElementById('cb-time').value = getLocalTimeString();
-                }
+                document.getElementById('cb-time').value = getLocalTimeString();
                 document.getElementById('cb-edit-id').value = '';
                 document.getElementById('cb-modal-title').textContent = 'Add Cashbook Entry';
                 document.getElementById('btn-save-cashbook').innerHTML = 'Save Entry';
             }
-
             if(modalId === 'add-task-modal') {
                 document.getElementById('form-add-task').reset();
                 document.getElementById('task-issue-date').value = getLocalDateString();
                 document.getElementById('task-issue-time').value = getLocalTimeString();
+                document.getElementById('task-edit-id').value = '';
+                document.getElementById('task-modal-title').textContent = 'Add New Task';
+                document.getElementById('btn-save-task').innerHTML = 'Save Task';
+            }
+            if(modalId === 'add-note-modal') {
+                document.getElementById('note-edit-id').value = '';
+                document.getElementById('note-title').value = '';
+                if(quillEditor) quillEditor.root.innerHTML = '';
+                document.getElementById('note-modal-title').textContent = 'Add New Note';
+                document.getElementById('btn-save-note').innerHTML = 'Save Note';
+            }
+            if(modalId === 'add-event-modal') {
+                document.getElementById('form-add-event').reset();
+                document.getElementById('event-edit-id').value = '';
+                document.getElementById('event-date').value = getLocalDateString();
+                document.getElementById('event-modal-title').textContent = 'Add Calendar Event';
+                document.getElementById('btn-save-event').innerHTML = 'Save Event';
             }
         }
 
         function closeModal(modalId) {
             document.getElementById(modalId).classList.add('hidden');
-            if(modalId === 'add-task-modal') document.getElementById('form-add-task').reset();
-            if(modalId === 'add-cashbook-modal') document.getElementById('form-add-cashbook').reset();
         }
 
         function toggleAppView(showApp) {
@@ -491,6 +704,11 @@
                 document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
                 btnElement.classList.add('active');
             }
+            
+            // Re-render calendar to fix any grid layout issues on show
+            if(tabId === 'tab-events') {
+                renderCalendarUI();
+            }
         }
 
         function initAuth() {
@@ -498,7 +716,8 @@
             if (saved) {
                 githubCreds = JSON.parse(saved);
                 toggleAppView(true);
-                loadAllData();
+                initQuill();
+                loadAllData(); 
             } else {
                 toggleAppView(false);
             }
@@ -516,13 +735,14 @@
             localStorage.setItem('dash_creds', JSON.stringify(githubCreds));
             showToast('Credentials Saved!');
             toggleAppView(true);
+            initQuill();
             loadAllData();
         }
 
         function logout() {
             localStorage.removeItem('dash_creds');
             githubCreds = { pat: '', user: '', repo: '' };
-            appData = { tasks: [], cashbook: [] };
+            appData = { tasks: [], cashbook: [], notes: [], events: [] };
             initAuth();
             showToast('Disconnected successfully', 'info');
         }
@@ -575,8 +795,6 @@
             return csv;
         }
 
-        const fileSHAs = { 'tasks.csv': null, 'cashbook.csv': null };
-
         async function fetchGitHubFile(filename) {
             const { pat, user, repo } = githubCreds;
             const timestamp = new Date().getTime();
@@ -587,11 +805,11 @@
                     'Authorization': `token ${pat}`, 
                     'Accept': 'application/vnd.github.v3+json'
                 },
-                cache: 'no-store'
+                cache: 'no-store' 
             });
 
             if (!response.ok) {
-                if (response.status === 404) return [];
+                if (response.status === 404) return []; // Auto handle missing files safely
                 const errData = await response.json().catch(() => ({}));
                 throw new Error(errData.message || `Failed to fetch ${filename}`);
             }
@@ -630,23 +848,29 @@
             }
             
             const data = await response.json();
-            fileSHAs[filename] = data.content.sha;
+            fileSHAs[filename] = data.content.sha; 
             return data;
         }
 
         async function loadAllData() {
             toggleLoader(true);
             try {
-                const [tasks, cashbook] = await Promise.all([
+                const [tasks, cashbook, notes, events] = await Promise.all([
                     fetchGitHubFile('tasks.csv'), 
-                    fetchGitHubFile('cashbook.csv')
+                    fetchGitHubFile('cashbook.csv'),
+                    fetchGitHubFile('notes.csv'),
+                    fetchGitHubFile('events.csv')
                 ]);
                 
                 appData.tasks = tasks;
                 appData.cashbook = cashbook;
+                appData.notes = notes;
+                appData.events = events;
                 
                 renderTasksUI();
                 renderCashbookUI(); 
+                renderNotesUI();
+                renderCalendarUI();
                 
                 showToast('Data Synced Successfully', 'success');
             } catch (error) {
@@ -676,18 +900,18 @@
                 }
             });
 
-            // Sorting Pending Tasks (Priority -> Newest Issue Date)
+            // Priority Sorting for Pending (High > Medium > Low)
             const priorityWeight = { 'High': 3, 'Medium': 2, 'Low': 1 };
             pendingTasks.sort((a, b) => {
                 const weightDiff = (priorityWeight[b.Priority] || 0) - (priorityWeight[a.Priority] || 0);
-                if (weightDiff !== 0) return weightDiff; 
-                
+                if (weightDiff !== 0) return weightDiff;
+                // Fallback to newest issue date if priorities match
                 const timeA = new Date(`${a['Issue Date'] || '1970-01-01'}T${a['Issue Time'] || '00:00'}:00`).getTime();
                 const timeB = new Date(`${b['Issue Date'] || '1970-01-01'}T${b['Issue Time'] || '00:00'}:00`).getTime();
                 return timeB - timeA;
             });
 
-            // Sorting Completed Tasks (Newest Completed Time First)
+            // Date Sorting for Completed (Newest completion first)
             completedTasks.sort((a, b) => {
                 const timeA = new Date(`${a['Completed Date'] || '1970-01-01'}T${a['Completed Time'] || '00:00'}:00`).getTime();
                 const timeB = new Date(`${b['Completed Date'] || '1970-01-01'}T${b['Completed Time'] || '00:00'}:00`).getTime();
@@ -708,28 +932,31 @@
                 }
 
                 const li = document.createElement('li');
-                li.className = `p-4 hover:bg-slate-50 transition group flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer`;
+                li.className = `p-4 hover:bg-white transition group flex flex-col sm:flex-row sm:items-center justify-between gap-4`;
                 
                 li.innerHTML = `
-                    <div class="flex-1 min-w-0" onclick="viewTaskDetails('${task.ID}')">
+                    <div class="flex-1 min-w-0 cursor-pointer" onclick="viewTaskDetails('${task.ID}')">
                         <div class="flex items-center gap-2 mb-1">
-                            <h4 class="font-semibold text-slate-800 truncate ${isCompleted ? 'line-through text-slate-500' : ''}">${task['Task Name']}</h4>
-                            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${prioColor}">${task.Priority}</span>
+                            <h4 class="font-semibold text-slate-800 truncate ${isCompleted ? 'line-through text-slate-400' : ''}">${task['Task Name']}</h4>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${prioColor}">${task.Priority}</span>
                         </div>
                         <p class="text-xs text-slate-500 truncate">${task.Description || 'No description'}</p>
-                        ${task['Due Date'] && !isCompleted ? `<p class="text-xs text-red-500 mt-1"><i class="ph ph-clock mr-1"></i>Due: ${task['Due Date']}</p>` : ''}
-                        ${isCompleted ? `<p class="text-xs text-green-600 mt-1"><i class="ph ph-check-circle mr-1"></i>Done: ${task['Completed Date']}${timeDisplay}</p>` : ''}
+                        ${task['Due Date'] && !isCompleted ? `<p class="text-xs text-red-500 mt-1 font-medium"><i class="ph ph-clock mr-1"></i>Due: ${task['Due Date']}</p>` : ''}
+                        ${isCompleted ? `<p class="text-xs text-green-600 mt-1 font-medium"><i class="ph ph-check-circle mr-1"></i>Done: ${task['Completed Date']}${timeDisplay}</p>` : ''}
                     </div>
                     
-                    <div class="shrink-0 flex items-center justify-center gap-2">
-                        <button onclick="toggleTaskStatus('${task.ID}')" class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition
+                    <div class="shrink-0 flex items-center justify-end gap-1.5 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100 mt-2 sm:mt-0">
+                        <button onclick="toggleTaskStatus('${task.ID}')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-xs transition
                             ${isCompleted 
                                 ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' 
                                 : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'}">
-                            <i class="ph ${isCompleted ? 'ph-arrow-u-up-left' : 'ph-check'} text-lg"></i>
-                            ${isCompleted ? 'Undo' : 'Complete'}
+                            <i class="ph ${isCompleted ? 'ph-arrow-u-up-left' : 'ph-check'} text-base"></i>
+                            ${isCompleted ? 'Undo' : 'Done'}
                         </button>
-                        <button onclick="deleteTask('${task.ID}')" class="flex items-center justify-center p-2 rounded-lg text-red-500 hover:bg-red-100 hover:text-red-600 bg-red-50 transition" title="Delete Task">
+                        <button onclick="editTask('${task.ID}')" class="flex items-center justify-center p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 transition" title="Edit Task">
+                            <i class="ph ph-pencil-simple text-lg"></i>
+                        </button>
+                        <button onclick="deleteTask('${task.ID}')" class="flex items-center justify-center p-1.5 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-500 transition" title="Delete Task">
                             <i class="ph ph-trash text-lg"></i>
                         </button>
                     </div>
@@ -752,37 +979,73 @@
         async function handleAddTask(e) {
             e.preventDefault();
             const btn = document.getElementById('btn-save-task');
-            btn.innerHTML = '<div class="loader" style="width:16px;height:16px;border-width:2px;"></div> Saving...';
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="loader" style="width:16px;height:16px;border-width:2px; border-top-color: white;"></div> Saving...';
             btn.disabled = true;
 
-            const newTask = {
-                'ID': 'TSK-' + Date.now(),
+            const editId = document.getElementById('task-edit-id').value;
+            
+            const taskData = {
                 'Task Name': document.getElementById('task-name').value.trim(),
                 'Description': document.getElementById('task-desc').value.trim(),
                 'Priority': document.getElementById('task-priority').value,
-                'Issue Date': document.getElementById('task-issue-date').value,
-                'Issue Time': document.getElementById('task-issue-time').value,
                 'Due Date': document.getElementById('task-due').value,
-                'Status': 'Pending',
-                'Completed Date': '',
-                'Completed Time': ''
             };
 
-            appData.tasks.push(newTask);
-            
+            let commitMsg = '';
+            let backupTasks = JSON.parse(JSON.stringify(appData.tasks));
+
+            if(editId) {
+                const index = appData.tasks.findIndex(t => t.ID === editId);
+                if (index > -1) {
+                    appData.tasks[index] = { ...appData.tasks[index], ...taskData };
+                    commitMsg = `Edit task: ${taskData['Task Name']}`;
+                }
+            } else {
+                const newTask = {
+                    'ID': 'TSK-' + Date.now(),
+                    'Issue Date': document.getElementById('task-issue-date').value,
+                    'Issue Time': document.getElementById('task-issue-time').value,
+                    'Status': 'Pending',
+                    'Completed Date': '',
+                    'Completed Time': '',
+                    ...taskData
+                };
+                appData.tasks.push(newTask);
+                commitMsg = `Add task: ${newTask['Task Name']}`;
+            }
+
             try {
-                await updateGitHubFile('tasks.csv', appData.tasks, `Add task: ${newTask['Task Name']}`);
+                await updateGitHubFile('tasks.csv', appData.tasks, commitMsg);
                 renderTasksUI();
                 closeModal('add-task-modal');
-                showToast('Task added successfully!');
+                showToast(editId ? 'Task updated successfully!' : 'Task added successfully!');
             } catch (error) {
                 console.error(error);
-                appData.tasks.pop(); 
+                appData.tasks = backupTasks;
                 showToast(`Error: ${error.message}`, 'error'); 
             } finally {
-                btn.innerHTML = 'Save Task';
+                btn.innerHTML = originalText;
                 btn.disabled = false;
             }
+        }
+
+        function editTask(taskId) {
+            const task = appData.tasks.find(t => t.ID === taskId);
+            if(!task) return;
+
+            document.getElementById('task-edit-id').value = task.ID;
+            document.getElementById('task-name').value = task['Task Name'];
+            document.getElementById('task-desc').value = task.Description;
+            document.getElementById('task-priority').value = task.Priority;
+            document.getElementById('task-due').value = task['Due Date'] || '';
+            document.getElementById('task-issue-date').value = task['Issue Date'] || '';
+            document.getElementById('task-issue-time').value = task['Issue Time'] || '';
+
+            document.getElementById('task-modal-title').textContent = 'Edit Task';
+            document.getElementById('btn-save-task').innerHTML = 'Update Task';
+            
+            document.getElementById('add-task-modal').classList.remove('hidden');
         }
 
         async function toggleTaskStatus(taskId) {
@@ -851,13 +1114,17 @@
             document.getElementById('detail-name').textContent = task['Task Name'];
             const prioEl = document.getElementById('detail-priority');
             prioEl.textContent = task.Priority;
-            prioEl.className = `px-3 py-1 rounded-full text-xs font-bold ${task.Priority === 'High' ? 'bg-red-100 text-red-700' : task.Priority === 'Medium' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'}`;
+            prioEl.className = `px-3 py-1 rounded-full text-xs font-bold shrink-0 ${task.Priority === 'High' ? 'bg-red-100 text-red-700' : task.Priority === 'Medium' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'}`;
 
             document.getElementById('detail-desc').textContent = task.Description || 'No description provided.';
             document.getElementById('detail-due').textContent = task['Due Date'] || 'None';
             
             let issueDisplay = task['Issue Date'] || '-';
-            if(task['Issue Time']) issueDisplay += ` at ${task['Issue Time']}`;
+            if(task['Issue Time']) {
+                const [h, m] = task['Issue Time'].split(':');
+                const d = new Date(); d.setHours(h, m);
+                issueDisplay += ` at ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+            }
             document.getElementById('detail-issue').textContent = issueDisplay;
             
             const statusEl = document.getElementById('detail-status');
@@ -868,7 +1135,11 @@
             if(task.Status === 'Completed') {
                 compWrap.classList.remove('hidden');
                 let completedDisplay = task['Completed Date'];
-                if(task['Completed Time']) completedDisplay += ` at ${task['Completed Time']}`;
+                if(task['Completed Time']) {
+                    const [h, m] = task['Completed Time'].split(':');
+                    const d = new Date(); d.setHours(h, m);
+                    completedDisplay += ` at ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                }
                 document.getElementById('detail-completed').textContent = completedDisplay;
             } else {
                 compWrap.classList.add('hidden');
@@ -877,33 +1148,359 @@
             openModal('detail-task-modal');
         }
 
+        function initQuill() {
+            if(quillEditor) return;
+            quillEditor = new Quill('#quill-editor', {
+                theme: 'snow',
+                placeholder: 'Write your notes here...',
+                modules: {
+                    toolbar: [
+                        [{ 'header': [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'color': [] }, { 'background': [] }],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'list': 'check' }],
+                        ['clean']
+                    ]
+                }
+            });
+        }
+
+        function renderNotesUI() {
+            const list = document.getElementById('list-notes');
+            list.innerHTML = '';
+
+            const sortedNotes = [...appData.notes].sort((a,b) => new Date(b.LastEdited) - new Date(a.LastEdited));
+
+            if(sortedNotes.length === 0) {
+                list.innerHTML = `<div class="col-span-full p-12 text-center text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200">No notes found. Create your first note!</div>`;
+                return;
+            }
+
+            sortedNotes.forEach(note => {
+                if(!note.ID) return;
+                
+                // Decode from Base64 CSV-safe format
+                let rawHtml = '';
+                try {
+                    rawHtml = decodeURIComponent(note.Content || '');
+                } catch(e) {
+                    rawHtml = 'Error loading content';
+                }
+
+                const card = document.createElement('div');
+                card.className = "bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col hover:shadow-md transition h-[250px] relative group overflow-hidden";
+                
+                // Note Preview logic (strip HTML to just show text snippet)
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = rawHtml;
+                const snippet = tempDiv.textContent || tempDiv.innerText || '';
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <h3 class="font-bold text-lg text-slate-800 line-clamp-2 leading-tight">${note.Title || 'Untitled Note'}</h3>
+                    </div>
+                    <div class="text-sm text-slate-500 line-clamp-6 note-preview mb-4 flex-1">
+                        ${snippet || '<span class="italic text-slate-300">Empty note</span>'}
+                    </div>
+                    <div class="flex justify-between items-center mt-auto border-t border-slate-50 pt-3">
+                        <span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">${note.LastEdited}</span>
+                        <div class="flex gap-1">
+                            <button onclick="editNote('${note.ID}')" class="p-2 text-indigo-500 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition" title="Edit Note"><i class="ph ph-pencil-simple text-lg"></i></button>
+                            <button onclick="deleteNote('${note.ID}')" class="p-2 text-red-400 bg-red-50 hover:bg-red-100 hover:text-red-500 rounded-lg transition" title="Delete Note"><i class="ph ph-trash text-lg"></i></button>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        async function handleSaveNote() {
+            const btn = document.getElementById('btn-save-note');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="loader" style="width:16px;height:16px;border-width:2px; border-top-color: white;"></div> Saving...';
+            btn.disabled = true;
+
+            const editId = document.getElementById('note-edit-id').value;
+            const title = document.getElementById('note-title').value.trim() || 'Untitled Note';
+            const rawHtml = quillEditor.root.innerHTML;
+            
+            // Encode content to bypass CSV breaking completely
+            const safeContent = encodeURIComponent(rawHtml);
+
+            let commitMsg = '';
+            let backupNotes = JSON.parse(JSON.stringify(appData.notes));
+
+            if (editId) {
+                const index = appData.notes.findIndex(n => n.ID === editId);
+                if (index > -1) {
+                    appData.notes[index] = { 
+                        ...appData.notes[index], 
+                        Title: title, 
+                        Content: safeContent,
+                        LastEdited: getLocalDateString()
+                    };
+                    commitMsg = `Edit note: ${title}`;
+                }
+            } else {
+                const newNote = {
+                    'ID': 'NT-' + Date.now(),
+                    'Title': title,
+                    'Content': safeContent,
+                    'LastEdited': getLocalDateString()
+                };
+                appData.notes.push(newNote);
+                commitMsg = `Add note: ${title}`;
+            }
+
+            try {
+                await updateGitHubFile('notes.csv', appData.notes, commitMsg);
+                renderNotesUI();
+                closeModal('add-note-modal');
+                showToast('Note saved successfully!');
+            } catch (error) {
+                console.error(error);
+                appData.notes = backupNotes;
+                showToast(`Error: ${error.message}`, 'error'); 
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function editNote(id) {
+            const note = appData.notes.find(n => n.ID === id);
+            if(!note) return;
+            
+            document.getElementById('note-edit-id').value = note.ID;
+            document.getElementById('note-title').value = note.Title;
+            
+            try {
+                quillEditor.root.innerHTML = decodeURIComponent(note.Content || '');
+            } catch(e) {
+                quillEditor.root.innerHTML = '';
+            }
+
+            document.getElementById('note-modal-title').textContent = 'Edit Note';
+            document.getElementById('btn-save-note').innerHTML = 'Update Note';
+            document.getElementById('add-note-modal').classList.remove('hidden');
+        }
+
+        async function deleteNote(id) {
+            if(!confirm("Are you sure you want to delete this note?")) return;
+            const index = appData.notes.findIndex(n => n.ID === id);
+            if(index === -1) return;
+
+            toggleLoader(true);
+            const deleted = appData.notes.splice(index, 1)[0]; 
+
+            try {
+                await updateGitHubFile('notes.csv', appData.notes, `Delete note: ${deleted.Title}`);
+                renderNotesUI();
+                showToast('Note deleted successfully!');
+            } catch (error) {
+                console.error(error);
+                appData.notes.splice(index, 0, deleted); 
+                showToast(`Error: ${error.message}`, 'error');
+            } finally {
+                toggleLoader(false);
+            }
+        }
+
+        function changeMonth(offset) {
+            calendarDate.setMonth(calendarDate.getMonth() + offset);
+            renderCalendarUI();
+        }
+
+        function renderCalendarUI() {
+            const grid = document.getElementById('calendar-grid');
+            const monthLabel = document.getElementById('cal-month-year');
+            const eventsList = document.getElementById('list-month-events');
+            
+            grid.innerHTML = '';
+            eventsList.innerHTML = '';
+
+            const year = calendarDate.getFullYear();
+            const month = calendarDate.getMonth();
+            
+            monthLabel.textContent = calendarDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // Extract events for THIS specific month
+            const currentMonthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+            const monthEvents = appData.events.filter(e => e.Date && e.Date.startsWith(currentMonthPrefix));
+            monthEvents.sort((a,b) => new Date(a.Date) - new Date(b.Date));
+
+            // Render Empty leading days
+            for(let i = 0; i < firstDay; i++) {
+                grid.innerHTML += `<div class="p-2 md:p-3 bg-transparent rounded-lg"></div>`;
+            }
+
+            // Render Days
+            const todayStr = getLocalDateString();
+            
+            for(let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const isToday = dateStr === todayStr;
+                
+                // Find events for this day
+                const dayEvents = monthEvents.filter(e => e.Date === dateStr);
+                
+                let dotsHtml = '';
+                if(dayEvents.length > 0) {
+                    dotsHtml = '<div class="flex justify-center mt-1 flex-wrap max-w-[20px] mx-auto">';
+                    // Max 3 dots so it doesn't break UI
+                    dayEvents.slice(0,3).forEach(e => {
+                        const typeClass = e.Type === 'Birthday' ? 'birthday' : e.Type === 'Anniversary' ? 'anniversary' : 'other';
+                        dotsHtml += `<span class="event-dot ${typeClass}"></span>`;
+                    });
+                    dotsHtml += '</div>';
+                }
+
+                grid.innerHTML += `
+                    <div onclick="prepEventDate('${dateStr}')" class="cal-day p-1 md:p-2 bg-white rounded-lg border border-slate-100 min-h-[40px] md:min-h-[50px] flex flex-col justify-start transition ${isToday ? 'today' : ''}">
+                        <span class="text-xs md:text-sm inline-block">${day}</span>
+                        ${dotsHtml}
+                    </div>
+                `;
+            }
+
+            // Render Event List for the month
+            if(monthEvents.length === 0) {
+                eventsList.innerHTML = `<div class="text-center text-slate-400 py-8 italic text-sm">No events this month</div>`;
+            } else {
+                monthEvents.forEach(e => {
+                    let icon, color;
+                    if(e.Type === 'Birthday') { icon = 'ph-cake'; color = 'text-rose-500 bg-rose-50'; }
+                    else if(e.Type === 'Anniversary') { icon = 'ph-heart'; color = 'text-purple-500 bg-purple-50'; }
+                    else { icon = 'ph-calendar-star'; color = 'text-blue-500 bg-blue-50'; }
+
+                    // Format date nice
+                    const d = new Date(e.Date);
+                    const niceDate = d.toLocaleString('default', { month: 'short', day: 'numeric' });
+
+                    eventsList.innerHTML += `
+                        <div class="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl hover:shadow-sm transition group">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${color}">
+                                <i class="ph ${icon} text-xl"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-bold text-slate-800 text-sm truncate">${e.Title}</h4>
+                                <p class="text-xs font-medium text-slate-500">${niceDate} • <span class="uppercase tracking-wider opacity-70">${e.Type}</span></p>
+                            </div>
+                            <div class="shrink-0 flex opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onclick="editEvent('${e.ID}')" class="p-1.5 text-slate-400 hover:text-blue-500 transition"><i class="ph ph-pencil-simple text-lg"></i></button>
+                                <button onclick="deleteEvent('${e.ID}')" class="p-1.5 text-slate-400 hover:text-red-500 transition"><i class="ph ph-trash text-lg"></i></button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function prepEventDate(dateStr) {
+            document.getElementById('form-add-event').reset();
+            document.getElementById('event-edit-id').value = '';
+            document.getElementById('event-date').value = dateStr;
+            document.getElementById('event-modal-title').textContent = 'Add Calendar Event';
+            document.getElementById('btn-save-event').innerHTML = 'Save Event';
+            openModal('add-event-modal');
+        }
+
+        async function handleSaveEvent(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-save-event');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="loader" style="width:16px;height:16px;border-width:2px; border-top-color: white;"></div> Saving...';
+            btn.disabled = true;
+
+            const editId = document.getElementById('event-edit-id').value;
+            const updatedData = {
+                'Date': document.getElementById('event-date').value,
+                'Type': document.getElementById('event-type').value,
+                'Title': document.getElementById('event-title').value.trim(),
+            };
+
+            let commitMsg = '';
+            let backupEvents = JSON.parse(JSON.stringify(appData.events));
+
+            if (editId) {
+                const index = appData.events.findIndex(ev => ev.ID === editId);
+                if (index > -1) {
+                    appData.events[index] = { ...appData.events[index], ...updatedData };
+                    commitMsg = `Edit event: ${updatedData.Title}`;
+                }
+            } else {
+                const newEvent = { 'ID': 'EVT-' + Date.now(), ...updatedData };
+                appData.events.push(newEvent);
+                commitMsg = `Add event: ${updatedData.Title}`;
+            }
+
+            // Sync calendar to show the month of the added event
+            const d = new Date(updatedData.Date);
+            calendarDate = new Date(d.getFullYear(), d.getMonth(), 1);
+
+            try {
+                await updateGitHubFile('events.csv', appData.events, commitMsg);
+                renderCalendarUI();
+                closeModal('add-event-modal');
+                showToast(editId ? 'Event updated!' : 'Event added!');
+            } catch (error) {
+                console.error(error);
+                appData.events = backupEvents;
+                showToast(`Error: ${error.message}`, 'error'); 
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function editEvent(id) {
+            const ev = appData.events.find(e => e.ID === id);
+            if(!ev) return;
+            document.getElementById('event-edit-id').value = ev.ID;
+            document.getElementById('event-date').value = ev.Date;
+            document.getElementById('event-type').value = ev.Type;
+            document.getElementById('event-title').value = ev.Title;
+            document.getElementById('event-modal-title').textContent = 'Edit Event';
+            document.getElementById('btn-save-event').innerHTML = 'Update Event';
+            document.getElementById('add-event-modal').classList.remove('hidden');
+        }
+
+        async function deleteEvent(id) {
+            if(!confirm("Are you sure you want to delete this event?")) return;
+            const index = appData.events.findIndex(e => e.ID === id);
+            if(index === -1) return;
+            toggleLoader(true);
+            const deleted = appData.events.splice(index, 1)[0]; 
+            try {
+                await updateGitHubFile('events.csv', appData.events, `Delete event: ${deleted.Title}`);
+                renderCalendarUI();
+                showToast('Event deleted successfully!');
+            } catch (error) {
+                console.error(error);
+                appData.events.splice(index, 0, deleted); 
+                showToast(`Error: ${error.message}`, 'error');
+            } finally {
+                toggleLoader(false);
+            }
+        }
+
         function renderCashbookUI() {
-            let cashBal = 0;
-            let onlineBal = 0;
-            const monthsMap = new Map();
-            const personLedger = {};
+            let cashBal = 0; let onlineBal = 0;
+            const monthsMap = new Map(); const personLedger = {};
 
             appData.cashbook.forEach(entry => {
                 if(!entry.ID || !entry.Amount) return;
-
                 const amt = parseFloat(entry.Amount) || 0;
                 
                 if(entry['Transaction Type'] === 'In') {
-                    if(entry['Payment Mode'] === 'Cash') cashBal += amt;
-                    else onlineBal += amt;
-
-                    if(entry.Person && entry.Person.trim() !== '') {
-                        const p = entry.Person.trim();
-                        personLedger[p] = (personLedger[p] || 0) - amt;
-                    }
+                    if(entry['Payment Mode'] === 'Cash') cashBal += amt; else onlineBal += amt;
+                    if(entry.Person && entry.Person.trim() !== '') personLedger[entry.Person.trim()] = (personLedger[entry.Person.trim()] || 0) - amt;
                 } else if (entry['Transaction Type'] === 'Out') {
-                    if(entry['Payment Mode'] === 'Cash') cashBal -= amt;
-                    else onlineBal -= amt;
-
-                    if(entry.Person && entry.Person.trim() !== '') {
-                        const p = entry.Person.trim();
-                        personLedger[p] = (personLedger[p] || 0) + amt;
-                    }
+                    if(entry['Payment Mode'] === 'Cash') cashBal -= amt; else onlineBal -= amt;
+                    if(entry.Person && entry.Person.trim() !== '') personLedger[entry.Person.trim()] = (personLedger[entry.Person.trim()] || 0) + amt;
                 }
 
                 if(entry.Date) {
@@ -916,9 +1513,7 @@
                 }
             });
 
-            let totalWillGet = 0;
-            let totalWillGive = 0;
-            
+            let totalWillGet = 0; let totalWillGive = 0;
             const personContainer = document.getElementById('person-balances-container');
             personContainer.innerHTML = '';
             let hasPersons = false;
@@ -926,30 +1521,20 @@
             for (const [person, balance] of Object.entries(personLedger)) {
                 if (balance === 0) continue;
                 hasPersons = true;
-                
-                if (balance > 0) {
-                    totalWillGet += balance;
-                } else {
-                    totalWillGive += Math.abs(balance);
-                }
+                if (balance > 0) totalWillGet += balance; else totalWillGive += Math.abs(balance);
 
                 const pCard = document.createElement('div');
-                pCard.className = 'bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center shadow-sm';
+                pCard.className = 'bg-white p-3 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm';
                 pCard.innerHTML = `
-                    <span class="font-medium text-slate-700 truncate mr-2" title="${person}">${person}</span>
-                    <div class="text-right">
-                        <span class="block text-xs font-semibold ${balance > 0 ? 'text-green-600' : 'text-red-600'}">${balance > 0 ? 'You will get' : 'You will give'}</span>
-                        <span class="block font-bold ${balance > 0 ? 'text-green-600' : 'text-red-600'}">₹${Math.abs(balance).toLocaleString('en-IN')}</span>
+                    <span class="font-medium text-slate-700 truncate mr-2 text-sm" title="${person}">${person}</span>
+                    <div class="text-right shrink-0">
+                        <span class="block text-[10px] font-semibold uppercase tracking-wider ${balance > 0 ? 'text-green-500' : 'text-red-500'}">${balance > 0 ? 'Get' : 'Give'}</span>
+                        <span class="block font-bold text-sm ${balance > 0 ? 'text-green-600' : 'text-red-600'}">₹${Math.abs(balance).toLocaleString('en-IN')}</span>
                     </div>
                 `;
                 personContainer.appendChild(pCard);
             }
-
-            if(hasPersons) {
-                personContainer.classList.remove('hidden');
-            } else {
-                personContainer.classList.add('hidden');
-            }
+            hasPersons ? personContainer.classList.remove('hidden') : personContainer.classList.add('hidden');
 
             document.getElementById('metric-cash-balance').textContent = cashBal.toLocaleString('en-IN');
             document.getElementById('metric-online-balance').textContent = onlineBal.toLocaleString('en-IN');
@@ -958,38 +1543,27 @@
 
             const filterContainer = document.getElementById('cashbook-month-filters');
             filterContainer.innerHTML = '';
-            
             const sortedMonths = Array.from(monthsMap.keys()).sort().reverse();
 
             if(sortedMonths.length === 0) {
-                document.getElementById('list-cashbook-entries').innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">No cashbook entries yet. Click "Add Entry" to begin!</td></tr>`;
-                document.getElementById('cb-total-cash').textContent = '₹0';
-                document.getElementById('cb-total-online').textContent = '₹0';
+                document.getElementById('list-cashbook-entries').innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">No cashbook entries yet.</td></tr>`;
+                document.getElementById('cb-total-cash').textContent = '₹0'; document.getElementById('cb-total-online').textContent = '₹0';
                 return;
             }
-
-            if(!currentCashbookMonth || !monthsMap.has(currentCashbookMonth)) {
-                currentCashbookMonth = sortedMonths[0];
-            }
+            if(!currentCashbookMonth || !monthsMap.has(currentCashbookMonth)) currentCashbookMonth = sortedMonths[0];
 
             sortedMonths.forEach(monthKey => {
                 const [yyyy, mm] = monthKey.split('-');
                 const monthName = new Date(yyyy, parseInt(mm)-1).toLocaleString('default', { month: 'short', year: 'numeric' });
-                
                 const btn = document.createElement('button');
-                btn.className = `month-btn px-4 py-1.5 rounded-full text-sm font-medium border whitespace-nowrap transition 
-                    ${monthKey === currentCashbookMonth ? 'active' : 'border-slate-200 text-slate-600 hover:bg-slate-100'}`;
+                btn.className = `month-btn px-4 py-1.5 rounded-full text-sm font-medium border whitespace-nowrap transition ${monthKey === currentCashbookMonth ? 'active' : 'border-slate-200 text-slate-600 hover:bg-slate-100'}`;
                 btn.textContent = monthName;
-                btn.onclick = () => {
-                    currentCashbookMonth = monthKey;
-                    renderCashbookUI();
-                };
+                btn.onclick = () => { currentCashbookMonth = monthKey; renderCashbookUI(); };
                 filterContainer.appendChild(btn);
             });
 
             const tbody = document.getElementById('list-cashbook-entries');
             tbody.innerHTML = '';
-            
             const entriesToDisplay = monthsMap.get(currentCashbookMonth).sort((a,b) => {
                 const dateTimeA = new Date(`${a.Date}T${a.Time || '00:00'}:00`);
                 const dateTimeB = new Date(`${b.Date}T${b.Time || '00:00'}:00`);
@@ -999,38 +1573,30 @@
             entriesToDisplay.forEach(entry => {
                 const amt = parseFloat(entry.Amount) || 0;
                 const isIn = entry['Transaction Type'] === 'In';
-                
                 let timeDisplay = '-';
                 if (entry.Time) {
                     const [h, m] = entry.Time.split(':');
-                    const d = new Date();
-                    d.setHours(h, m);
+                    const d = new Date(); d.setHours(h, m);
                     timeDisplay = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 }
 
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition group";
+                tr.className = "hover:bg-slate-50 transition group border-b border-slate-50 last:border-0";
                 tr.innerHTML = `
                     <td class="p-4 text-slate-500 whitespace-nowrap">${entry.Date}</td>
                     <td class="p-4 text-slate-500 whitespace-nowrap font-medium">${timeDisplay}</td>
                     <td class="p-4 font-medium text-slate-800">
                         ${entry.Description}
-                        ${entry.Person ? `<span class="block text-xs text-slate-400 mt-0.5"><i class="ph ph-user mr-1"></i>${entry.Person}</span>` : ''}
+                        ${entry.Person ? `<span class="block text-[11px] font-bold text-slate-400 mt-1 uppercase tracking-wider"><i class="ph ph-user mr-1"></i>${entry.Person}</span>` : ''}
                     </td>
                     <td class="p-4">
-                        <span class="px-2 py-1 rounded text-xs font-semibold ${entry['Payment Mode']==='Cash' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'}">
-                            ${entry['Payment Mode']}
-                        </span>
+                        <span class="px-2 py-1 rounded text-[11px] font-bold uppercase tracking-wider ${entry['Payment Mode']==='Cash' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'}">${entry['Payment Mode']}</span>
                     </td>
                     <td class="p-4 text-right font-mono font-bold text-green-600">${isIn ? `₹${amt.toLocaleString('en-IN')}` : '-'}</td>
                     <td class="p-4 text-right font-mono font-bold text-red-600">${!isIn ? `₹${amt.toLocaleString('en-IN')}` : '-'}</td>
-                    <td class="p-4 text-center flex justify-center gap-1">
-                        <button onclick="editCashbookEntry('${entry.ID}')" class="text-slate-400 hover:text-blue-500 hover:bg-blue-50 p-2 rounded transition" title="Edit Entry">
-                            <i class="ph ph-pencil-simple text-lg"></i>
-                        </button>
-                        <button onclick="deleteCashbookEntry('${entry.ID}')" class="text-slate-400 hover:text-red-500 hover:bg-red-50 p-2 rounded transition" title="Delete Entry">
-                            <i class="ph ph-trash text-lg"></i>
-                        </button>
+                    <td class="p-4 text-center flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="editCashbookEntry('${entry.ID}')" class="text-slate-400 hover:text-blue-500 p-1.5 transition" title="Edit Entry"><i class="ph ph-pencil-simple text-lg"></i></button>
+                        <button onclick="deleteCashbookEntry('${entry.ID}')" class="text-slate-400 hover:text-red-500 p-1.5 transition" title="Delete Entry"><i class="ph ph-trash text-lg"></i></button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -1059,12 +1625,9 @@
             };
 
             const dateParts = updatedEntryData.Date.split('-');
-            if (dateParts.length >= 2) {
-                currentCashbookMonth = `${dateParts[0]}-${dateParts[1]}`;
-            }
+            if (dateParts.length >= 2) currentCashbookMonth = `${dateParts[0]}-${dateParts[1]}`;
 
-            let commitMsg = '';
-            let backupCashbook = JSON.parse(JSON.stringify(appData.cashbook));
+            let commitMsg = ''; let backupCashbook = JSON.parse(JSON.stringify(appData.cashbook));
 
             if (editId) {
                 const index = appData.cashbook.findIndex(e => e.ID === editId);
@@ -1073,33 +1636,25 @@
                     commitMsg = `Edit cashbook entry: ₹${updatedEntryData.Amount}`;
                 }
             } else {
-                const newEntry = {
-                    'ID': 'CB-' + Date.now(),
-                    ...updatedEntryData
-                };
+                const newEntry = { 'ID': 'CB-' + Date.now(), ...updatedEntryData };
                 appData.cashbook.push(newEntry);
                 commitMsg = `Add cashbook entry: ₹${newEntry.Amount} ${newEntry['Transaction Type']}`;
             }
 
             try {
                 await updateGitHubFile('cashbook.csv', appData.cashbook, commitMsg);
-                renderCashbookUI();
-                closeModal('add-cashbook-modal');
-                showToast(editId ? 'Entry updated successfully!' : 'Entry added successfully!');
+                renderCashbookUI(); closeModal('add-cashbook-modal');
+                showToast(editId ? 'Entry updated!' : 'Entry added!');
             } catch (error) {
-                console.error(error);
-                appData.cashbook = backupCashbook;
-                showToast(`Error: ${error.message}`, 'error'); 
+                console.error(error); appData.cashbook = backupCashbook; showToast(`Error: ${error.message}`, 'error'); 
             } finally {
-                btn.innerHTML = originalBtnText.includes('Update') ? 'Update Entry' : 'Save Entry';
-                btn.disabled = false;
+                btn.innerHTML = originalBtnText; btn.disabled = false;
             }
         }
 
         function editCashbookEntry(entryId) {
             const entry = appData.cashbook.find(e => e.ID === entryId);
             if(!entry) return;
-
             document.getElementById('cb-edit-id').value = entry.ID;
             document.getElementById('cb-type').value = entry['Transaction Type'];
             document.getElementById('cb-amount').value = entry.Amount;
@@ -1108,35 +1663,28 @@
             document.getElementById('cb-mode').value = entry['Payment Mode'];
             document.getElementById('cb-desc').value = entry.Description;
             document.getElementById('cb-person').value = entry.Person || '';
-
             document.getElementById('cb-modal-title').textContent = 'Edit Cashbook Entry';
             document.getElementById('btn-save-cashbook').innerHTML = 'Update Entry';
-            
             document.getElementById('add-cashbook-modal').classList.remove('hidden');
         }
 
         async function deleteCashbookEntry(entryId) {
-            if(!confirm("Are you sure you want to delete this cashbook entry?")) return;
-
+            if(!confirm("Are you sure you want to delete this entry?")) return;
             const entryIndex = appData.cashbook.findIndex(e => e.ID === entryId);
             if(entryIndex === -1) return;
-
             toggleLoader(true);
             const deletedEntry = appData.cashbook.splice(entryIndex, 1)[0]; 
-
             try {
                 await updateGitHubFile('cashbook.csv', appData.cashbook, `Delete cashbook entry: ₹${deletedEntry.Amount}`);
-                renderCashbookUI();
-                showToast('Entry deleted successfully!');
+                renderCashbookUI(); showToast('Entry deleted!');
             } catch (error) {
-                console.error(error);
-                appData.cashbook.splice(entryIndex, 0, deletedEntry); 
-                showToast(`Error: ${error.message}`, 'error');
+                console.error(error); appData.cashbook.splice(entryIndex, 0, deletedEntry); showToast(`Error: ${error.message}`, 'error');
             } finally {
                 toggleLoader(false);
             }
         }
 
+        // Initialize App on Load
         window.onload = initAuth;
     </script>
 </body>
