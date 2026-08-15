@@ -1,16 +1,139 @@
-<!-- ... existing code ... -->
-            <div class="flex-1 flex md:flex-col justify-around md:justify-start px-2 py-3 md:p-4 gap-2 overflow-x-auto md:overflow-visible">
-                <button onclick="switchTab('tab-overview', this)" class="nav-btn active flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center px-4 py-3 rounded-lg transition gap-1 md:gap-3">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Personal Dashboard</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- Quill.js for Rich Text Notes -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+
+    <!-- Custom Favicon (Inline SVG) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'><rect width='256' height='256' fill='none'/><rect x='32' y='48' width='192' height='160' rx='16' fill='none' stroke='%232563eb' stroke-linecap='round' stroke-linejoin='round' stroke-width='16'/><line x1='32' y1='96' x2='224' y2='96' fill='none' stroke='%232563eb' stroke-linecap='round' stroke-linejoin='round' stroke-width='16'/><line x1='96' y1='144' x2='160' y2='144' fill='none' stroke='%232563eb' stroke-linecap='round' stroke-linejoin='round' stroke-width='16'/></svg>">
+
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .custom-scrollbar::-webkit-scrollbar { height: 4px; }
+        
+        /* Toast notification */
+        #toast-container { transition: opacity 0.3s ease, transform 0.3s ease; }
+        
+        /* Navigation styling */
+        .nav-btn.active { background-color: #2563eb; color: #ffffff; }
+        .nav-btn:not(.active) { color: #94a3b8; }
+        .nav-btn:not(.active):hover { background-color: #1e293b; color: #e2e8f0; }
+        
+        .month-btn.active { background-color: #1e293b; color: #ffffff; border-color: #1e293b; }
+        
+        /* Loader */
+        .loader {
+            border: 3px solid #f3f3f3; border-top: 3px solid #2563eb;
+            border-radius: 50%; width: 24px; height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Quill Editor Overrides */
+        .ql-container { font-family: inherit; font-size: 1rem; border-bottom-left-radius: 0.5rem; border-bottom-right-radius: 0.5rem; }
+        .ql-toolbar { border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; background: #f8fafc; }
+        .ql-editor { min-height: 150px; }
+        
+        /* Calendar Grid */
+        .cal-day-header { text-align: center; font-weight: 600; font-size: 0.75rem; color: #64748b; padding: 0.5rem 0; text-transform: uppercase; }
+        .cal-cell { min-height: 80px; border: 1px solid #f1f5f9; padding: 0.25rem; }
+        .cal-cell.today { background-color: #eff6ff; }
+        .cal-cell.other-month { background-color: #f8fafc; color: #cbd5e1; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-[100dvh] flex flex-col overflow-hidden">
+
+    <div id="toast-container" class="fixed top-4 right-4 z-[60] opacity-0 pointer-events-none translate-y-[-20px]">
+        <div id="toast-message" class="bg-white px-6 py-3 rounded-lg shadow-lg border-l-4 font-medium">Message</div>
+    </div>
+
+    <div id="global-loader" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-[60] hidden flex-col items-center justify-center">
+        <div class="loader mb-4" style="width: 48px; height: 48px;"></div>
+        <p class="text-slate-600 font-medium">Syncing with GitHub...</p>
+    </div>
+
+    <div id="login-view" class="bg-slate-50 min-h-screen flex items-center justify-center p-4 w-full absolute inset-0 z-50 hidden">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
+            <div class="text-center mb-8 flex flex-col items-center">
+                <div class="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 text-blue-600">
+                    <i class="ph ph-squares-four text-4xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-900">Personal Dashboard</h1>
+                <p class="text-sm text-slate-500 mt-2">Connect your GitHub repository</p>
+            </div>
+            
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-semibold mb-1.5 text-slate-700">GitHub PAT</label>
+                    <input type="password" id="input-pat" required placeholder="ghp_xxxxxxxxxxxx" 
+                           class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1.5 text-slate-700">GitHub Username</label>
+                    <input type="text" id="input-user" required placeholder="e.g., octocat"
+                           class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1.5 text-slate-700">Repository Name</label>
+                    <input type="text" id="input-repo" required placeholder="e.g., personal-dashboard"
+                           class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition shadow-lg shadow-blue-200 mt-2">
+                    Connect & Sync
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="app-view" class="w-full h-[100dvh] flex flex-col md:flex-row hidden overflow-hidden bg-slate-50 relative">
+        
+        <!-- Sidebar (Desktop) / Bottom Nav (Mobile) -->
+        <nav class="bg-slate-900 text-white md:w-64 w-full flex-shrink-0 flex flex-row md:flex-col z-20 absolute md:relative bottom-0 md:bottom-auto inset-x-0 h-16 md:h-full shadow-[0_-4px_20px_rgba(0,0,0,0.15)] md:shadow-none pb-safe">
+            <!-- Desktop Header Logo -->
+            <div class="p-6 hidden md:flex items-center gap-3 border-b border-slate-800">
+                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <i class="ph ph-squares-four text-white text-xl"></i>
+                </div>
+                <h2 class="text-xl font-bold tracking-tight">Dashboard</h2>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="flex-1 flex md:flex-col justify-around md:justify-start px-2 py-2 md:p-4 gap-1 md:gap-2 overflow-x-auto md:overflow-visible custom-scrollbar w-full">
+                <button onclick="switchTab('tab-overview', this)" class="nav-btn active flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center px-3 py-2 md:py-3 rounded-lg transition gap-1 md:gap-3 min-w-[70px]">
                     <i class="ph ph-chart-line-up text-xl md:text-2xl"></i>
-                    <span class="text-xs md:text-sm font-medium">Overview</span>
+                    <span class="text-[10px] md:text-sm font-medium">Overview</span>
                 </button>
-                <button onclick="switchTab('tab-tasks', this)" class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center px-4 py-3 rounded-lg transition gap-1 md:gap-3">
+                <button onclick="switchTab('tab-tasks', this)" class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center px-3 py-2 md:py-3 rounded-lg transition gap-1 md:gap-3 min-w-[70px]">
                     <i class="ph ph-check-square-offset text-xl md:text-2xl"></i>
-                    <span class="text-xs md:text-sm font-medium">Tasks</span>
+                    <span class="text-[10px] md:text-sm font-medium">Tasks</span>
                 </button>
-                <button onclick="switchTab('tab-cashbook', this)" class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center px-4 py-3 rounded-lg transition gap-1 md:gap-3">
+                <button onclick="switchTab('tab-cashbook', this)" class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center px-3 py-2 md:py-3 rounded-lg transition gap-1 md:gap-3 min-w-[70px]">
                     <i class="ph ph-wallet text-xl md:text-2xl"></i>
-                    <span class="text-xs md:text-sm font-medium">Cashbook</span>
+                    <span class="text-[10px] md:text-sm font-medium">Cashbook</span>
+                </button>
+                <button onclick="switchTab('tab-notes', this)" class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center px-3 py-2 md:py-3 rounded-lg transition gap-1 md:gap-3 min-w-[70px]">
+                    <i class="ph ph-notebook text-xl md:text-2xl"></i>
+                    <span class="text-[10px] md:text-sm font-medium">Notes</span>
+                </button>
+                <button onclick="switchTab('tab-events', this)" class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center px-3 py-2 md:py-3 rounded-lg transition gap-1 md:gap-3 min-w-[70px]">
+                    <i class="ph ph-calendar text-xl md:text-2xl"></i>
+                    <span class="text-[10px] md:text-sm font-medium">Events</span>
                 </button>
             </div>
 
@@ -30,13 +153,16 @@
             </div>
         </nav>
 
-        <!-- Main Content Area -->
-        <main class="flex-1 min-h-0 bg-slate-50 overflow-y-auto w-full relative pb-6 md:pb-0">
+        <main class="flex-1 min-h-0 bg-slate-50 overflow-y-auto w-full relative pb-20 md:pb-0 h-full">
+            
             <!-- Mobile Header -->
-            <header class="md:hidden bg-white shadow-sm px-4 py-4 flex justify-between items-center sticky top-0 z-10">
-                <h1 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                    <i class="ph ph-squares-four text-blue-600"></i> My Dashboard
-                </h1>
+            <header class="md:hidden bg-white shadow-sm px-4 py-3 flex justify-between items-center sticky top-0 z-10">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center">
+                        <i class="ph ph-squares-four text-white"></i>
+                    </div>
+                    <h1 class="text-lg font-bold text-slate-800 tracking-tight">Dashboard</h1>
+                </div>
                 <div class="flex gap-2">
                     <button onclick="openModal('notifications-modal')" class="text-slate-500 p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition relative">
                         <i class="ph ph-bell text-xl"></i>
@@ -51,11 +177,235 @@
                 </div>
             </header>
 
-            <div class="p-4 md:p-8 max-w-6xl mx-auto">
-<!-- ... existing code ... -->
-    <!-- MODALS -->
+            <div class="p-4 md:p-8 max-w-6xl mx-auto h-full">
+                
+                <div id="tab-overview" class="tab-content block h-full">
+                    <div class="flex justify-between items-center mb-6 hidden md:flex">
+                        <h2 class="text-2xl font-bold text-slate-800">Overview</h2>
+                        <button onclick="loadAllData()" class="bg-white text-slate-600 border border-slate-200 px-4 py-2 rounded-lg font-medium hover:bg-slate-50 transition flex items-center gap-2 shadow-sm">
+                            <i class="ph ph-arrows-clockwise text-lg"></i> Refresh Data
+                        </button>
+                    </div>
+                    
+                    <!-- 2 Columns, 3 Rows Grid -->
+                    <div class="grid grid-cols-2 md:grid-cols-2 gap-4 md:gap-6">
+                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between mb-2 md:mb-4 gap-2">
+                                <h3 class="text-slate-500 text-xs md:text-sm font-semibold order-2 md:order-1">Total Tasks</h3>
+                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 order-1 md:order-2 shrink-0">
+                                    <i class="ph ph-list-numbers text-xl"></i>
+                                </div>
+                            </div>
+                            <p class="text-2xl md:text-3xl font-bold text-slate-800" id="metric-total-tasks">0</p>
+                        </div>
+                        
+                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between mb-2 md:mb-4 gap-2">
+                                <h3 class="text-slate-500 text-xs md:text-sm font-semibold order-2 md:order-1">Pending Tasks</h3>
+                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 order-1 md:order-2 shrink-0">
+                                    <i class="ph ph-hourglass-high text-xl"></i>
+                                </div>
+                            </div>
+                            <p class="text-2xl md:text-3xl font-bold text-slate-800" id="metric-pending-tasks">0</p>
+                        </div>
 
-    <!-- Notifications Modal -->
+                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between mb-2 md:mb-4 gap-2">
+                                <h3 class="text-slate-500 text-xs md:text-sm font-semibold order-2 md:order-1">Cash Balance</h3>
+                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 order-1 md:order-2 shrink-0">
+                                    <i class="ph ph-money text-xl"></i>
+                                </div>
+                            </div>
+                            <p class="text-2xl md:text-3xl font-bold text-slate-800">₹<span id="metric-cash-balance">0</span></p>
+                        </div>
+
+                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between mb-2 md:mb-4 gap-2">
+                                <h3 class="text-slate-500 text-xs md:text-sm font-semibold order-2 md:order-1">Online Balance</h3>
+                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 order-1 md:order-2 shrink-0">
+                                    <i class="ph ph-bank text-xl"></i>
+                                </div>
+                            </div>
+                            <p class="text-2xl md:text-3xl font-bold text-slate-800">₹<span id="metric-online-balance">0</span></p>
+                        </div>
+
+                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between mb-2 md:mb-4 gap-2">
+                                <h3 class="text-slate-500 text-xs md:text-sm font-semibold order-2 md:order-1">You will get</h3>
+                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 order-1 md:order-2 shrink-0">
+                                    <i class="ph ph-trend-up text-xl"></i>
+                                </div>
+                            </div>
+                            <p class="text-2xl md:text-3xl font-bold text-emerald-600">₹<span id="metric-will-get">0</span></p>
+                        </div>
+
+                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between mb-2 md:mb-4 gap-2">
+                                <h3 class="text-slate-500 text-xs md:text-sm font-semibold order-2 md:order-1">You will give</h3>
+                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 order-1 md:order-2 shrink-0">
+                                    <i class="ph ph-trend-down text-xl"></i>
+                                </div>
+                            </div>
+                            <p class="text-2xl md:text-3xl font-bold text-rose-600">₹<span id="metric-will-give">0</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-tasks" class="tab-content hidden h-full flex flex-col">
+                    <div class="flex justify-between items-center mb-4 shrink-0">
+                        <h2 class="text-xl md:text-2xl font-bold text-slate-800">Task Manager</h2>
+                        <button onclick="openModal('add-task-modal')" class="bg-blue-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm md:text-base font-medium hover:bg-blue-700 transition flex items-center gap-2 shadow-sm">
+                            <i class="ph ph-plus-circle text-lg md:text-xl"></i> Add Task
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 items-start flex-1 min-h-0 pb-4">
+                        <!-- Pending Tasks -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col max-h-full">
+                            <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center shrink-0">
+                                <h3 class="font-bold text-slate-700">Pending <span class="text-xs font-normal text-slate-500 ml-1">(Priority Sort)</span></h3>
+                                <span id="count-pending" class="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold">0</span>
+                            </div>
+                            <ul id="list-pending-tasks" class="divide-y divide-slate-100 overflow-y-auto flex-1 custom-scrollbar">
+                                <!-- JS Injected -->
+                            </ul>
+                        </div>
+
+                        <!-- Completed Tasks -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden opacity-80 flex flex-col max-h-full">
+                            <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center shrink-0">
+                                <h3 class="font-bold text-slate-700">Completed <span class="text-xs font-normal text-slate-500 ml-1">(Latest First)</span></h3>
+                                <span id="count-completed" class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">0</span>
+                            </div>
+                            <ul id="list-completed-tasks" class="divide-y divide-slate-100 overflow-y-auto flex-1 custom-scrollbar">
+                                <!-- JS Injected -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-cashbook" class="tab-content hidden h-full flex flex-col">
+                    <div class="flex justify-between items-center mb-4 shrink-0">
+                        <h2 class="text-xl md:text-2xl font-bold text-slate-800">Cashbook</h2>
+                        <button onclick="openModal('add-cashbook-modal')" class="bg-green-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm md:text-base font-medium hover:bg-green-700 transition flex items-center gap-2 shadow-sm">
+                            <i class="ph ph-plus-circle text-lg md:text-xl"></i> Add Entry
+                        </button>
+                    </div>
+
+                    <!-- Global Balances -->
+                    <div class="grid grid-cols-2 gap-4 mb-4 shrink-0">
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-slate-500 font-semibold mb-1">Total Cash Available</p>
+                                <p class="text-xl font-bold text-slate-800">₹<span id="cb-global-cash">0</span></p>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center hidden sm:flex"><i class="ph ph-money text-xl"></i></div>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-slate-500 font-semibold mb-1">Total Online Available</p>
+                                <p class="text-xl font-bold text-slate-800">₹<span id="cb-global-online">0</span></p>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center hidden sm:flex"><i class="ph ph-bank text-xl"></i></div>
+                        </div>
+                    </div>
+
+                    <!-- Person Balances Summary -->
+                    <div id="person-balances-container" class="mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0 hidden"></div>
+
+                    <!-- Month Filter Pills -->
+                    <div class="mb-4 flex gap-2 overflow-x-auto pb-2 custom-scrollbar shrink-0" id="cashbook-month-filters"></div>
+
+                    <!-- Month Specific Summary -->
+                    <div class="grid grid-cols-2 gap-4 mb-4 shrink-0" id="cb-month-summary-container" style="display: none;">
+                        <div class="bg-green-50 p-3 rounded-lg border border-green-100 text-center">
+                            <p class="text-xs text-green-700 font-semibold mb-0.5">Month Income</p>
+                            <p class="text-lg font-bold text-green-700">+₹<span id="cb-month-in">0</span></p>
+                        </div>
+                        <div class="bg-red-50 p-3 rounded-lg border border-red-100 text-center">
+                            <p class="text-xs text-red-700 font-semibold mb-0.5">Month Expense</p>
+                            <p class="text-lg font-bold text-red-700">-₹<span id="cb-month-out">0</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Cashbook Table -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex-1 min-h-0 flex flex-col mb-4">
+                        <div class="overflow-x-auto flex-1 custom-scrollbar">
+                            <table class="w-full text-left border-collapse min-w-[650px]">
+                                <thead class="sticky top-0 z-10 bg-slate-50">
+                                    <tr class="text-slate-500 text-sm border-b border-slate-200 shadow-sm">
+                                        <th class="p-3 font-semibold w-24">Date</th>
+                                        <th class="p-3 font-semibold w-20">Time</th>
+                                        <th class="p-3 font-semibold">Description</th>
+                                        <th class="p-3 font-semibold w-24">Mode</th>
+                                        <th class="p-3 font-semibold text-green-600 text-right w-28">In (₹)</th>
+                                        <th class="p-3 font-semibold text-red-600 text-right w-28">Out (₹)</th>
+                                        <th class="p-3 font-semibold w-24 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="list-cashbook-entries" class="divide-y divide-slate-100 text-sm">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-notes" class="tab-content hidden h-full flex flex-col">
+                    <div class="flex justify-between items-center mb-4 shrink-0">
+                        <h2 class="text-xl md:text-2xl font-bold text-slate-800">Notes</h2>
+                        <button onclick="openNoteModal()" class="bg-purple-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm md:text-base font-medium hover:bg-purple-700 transition flex items-center gap-2 shadow-sm">
+                            <i class="ph ph-plus-circle text-lg md:text-xl"></i> Add Note
+                        </button>
+                    </div>
+
+                    <div id="notes-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-4 overflow-y-auto flex-1 custom-scrollbar content-start">
+                        <!-- JS Injected -->
+                    </div>
+                </div>
+
+                <div id="tab-events" class="tab-content hidden h-full flex flex-col">
+                    <div class="flex justify-between items-center mb-4 shrink-0">
+                        <h2 class="text-xl md:text-2xl font-bold text-slate-800">Events Calendar</h2>
+                        <button onclick="prepEventDate(getLocalDateString())" class="bg-rose-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm md:text-base font-medium hover:bg-rose-700 transition flex items-center gap-2 shadow-sm">
+                            <i class="ph ph-plus-circle text-lg md:text-xl"></i> Add Event
+                        </button>
+                    </div>
+
+                    <div class="flex-1 min-h-0 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col md:flex-row mb-4">
+                        <!-- Calendar Grid -->
+                        <div class="flex-1 flex flex-col border-r border-slate-100">
+                            <div class="px-4 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                                <button onclick="changeCalendarMonth(-1)" class="p-1 hover:bg-slate-200 rounded transition"><i class="ph ph-caret-left text-xl"></i></button>
+                                <h3 id="cal-month-title" class="font-bold text-slate-800">Month Year</h3>
+                                <button onclick="changeCalendarMonth(1)" class="p-1 hover:bg-slate-200 rounded transition"><i class="ph ph-caret-right text-xl"></i></button>
+                            </div>
+                            <div class="grid grid-cols-7 bg-white">
+                                <div class="cal-day-header">Sun</div><div class="cal-day-header">Mon</div>
+                                <div class="cal-day-header">Tue</div><div class="cal-day-header">Wed</div>
+                                <div class="cal-day-header">Thu</div><div class="cal-day-header">Fri</div>
+                                <div class="cal-day-header">Sat</div>
+                            </div>
+                            <div id="cal-grid" class="grid grid-cols-7 flex-1 auto-rows-fr bg-slate-50 gap-[1px]">
+                                <!-- JS Injected -->
+                            </div>
+                        </div>
+
+                        <!-- Daily Events List -->
+                        <div class="w-full md:w-80 flex flex-col bg-slate-50 h-64 md:h-auto border-t md:border-t-0 border-slate-200">
+                            <div class="px-4 py-3 border-b border-slate-200 bg-white shrink-0">
+                                <h3 id="cal-selected-date-title" class="font-bold text-slate-800 text-sm">Select a date</h3>
+                            </div>
+                            <div class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar" id="cal-day-details">
+                                <!-- JS Injected -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
     <div id="notifications-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden transform transition-all flex flex-col max-h-[80vh]">
             <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 shrink-0">
@@ -65,9 +415,7 @@
                 <button onclick="closeModal('notifications-modal')" class="text-slate-400 hover:text-slate-600 transition"><i class="ph ph-x text-xl"></i></button>
             </div>
             <div class="p-6 overflow-y-auto custom-scrollbar flex-1 bg-slate-50/50">
-                <div id="notifications-list" class="space-y-3">
-                    <!-- Notifications JS Injected -->
-                </div>
+                <div id="notifications-list" class="space-y-3"></div>
             </div>
             <div class="p-4 border-t border-slate-100 flex justify-center shrink-0">
                 <button onclick="closeModal('notifications-modal')" class="text-sm font-semibold text-slate-500 hover:text-slate-800 transition">Close Panel</button>
@@ -75,9 +423,8 @@
         </div>
     </div>
 
-    <!-- Add Task Modal -->
-    <div id="add-task-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all">
+    <div id="add-task-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all my-auto">
             <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
                 <h3 id="task-modal-title" class="font-bold text-lg text-slate-800">Add New Task</h3>
                 <button onclick="closeModal('add-task-modal')" class="text-slate-400 hover:text-slate-600 transition"><i class="ph ph-x text-xl"></i></button>
@@ -112,7 +459,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold mb-1">Due Date</label>
+                        <label class="block text-sm font-semibold mb-1">Due Date (Optional)</label>
                         <input type="date" id="task-due" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
                 </div>
@@ -122,6 +469,7 @@
                         <option value="None">None</option>
                         <option value="1 Day">1 Day Before</option>
                         <option value="1 Week">1 Week Before</option>
+                        <option value="1 Month">1 Month Before</option>
                     </select>
                 </div>
                 <div class="pt-4 flex justify-end gap-3">
@@ -133,11 +481,110 @@
             </form>
         </div>
     </div>
-<!-- ... existing code ... -->
-    <div id="add-event-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden transform transition-all">
+
+    <div id="add-cashbook-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all my-auto">
             <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                <h3 id="event-modal-title" class="font-bold text-lg text-slate-800">Add Calendar Event</h3>
+                <h3 id="cb-modal-title" class="font-bold text-lg text-slate-800">Add Cashbook Entry</h3>
+                <button onclick="closeModal('add-cashbook-modal')" class="text-slate-400 hover:text-slate-600 transition"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            <form id="form-add-cashbook" onsubmit="handleAddCashbook(event)" class="p-6 space-y-4">
+                <input type="hidden" id="cb-edit-id" value="">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Type</label>
+                        <select id="cb-type" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none bg-white font-semibold">
+                            <option value="In" class="text-green-600">+ IN</option>
+                            <option value="Out" class="text-red-600">- OUT</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Amount (₹)</label>
+                        <input type="number" id="cb-amount" required min="0" step="0.01" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-mono">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Date</label>
+                        <input type="date" id="cb-date" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Time</label>
+                        <input type="time" id="cb-time" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Payment Mode</label>
+                        <select id="cb-mode" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none bg-white">
+                            <option value="Cash">Cash</option>
+                            <option value="Online">Online</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Person (Optional)</label>
+                        <input type="text" id="cb-person" placeholder="Who was involved?" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Description</label>
+                    <input type="text" id="cb-desc" required placeholder="What was this for?" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+                </div>
+
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal('add-cashbook-modal')" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition">Cancel</button>
+                    <button type="submit" id="btn-save-cashbook" class="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition flex items-center gap-2">
+                        Save Entry
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="add-note-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 shrink-0">
+                <h3 id="note-modal-title" class="font-bold text-lg text-slate-800">Add Note</h3>
+                <button onclick="closeModal('add-note-modal')" class="text-slate-400 hover:text-slate-600 transition"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 bg-white custom-scrollbar">
+                <input type="hidden" id="note-edit-id" value="">
+                <div class="mb-4 flex gap-4">
+                    <input type="text" id="note-title" required placeholder="Note Title..." class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-lg">
+                    <select id="note-color" class="px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white w-32 shrink-0">
+                        <option value="bg-white">White</option>
+                        <option value="bg-yellow-50">Yellow</option>
+                        <option value="bg-blue-50">Blue</option>
+                        <option value="bg-green-50">Green</option>
+                        <option value="bg-pink-50">Pink</option>
+                    </select>
+                </div>
+                <!-- Quill Editor Container -->
+                <div class="border border-slate-300 rounded-lg overflow-hidden flex flex-col bg-white">
+                    <div id="quill-toolbar">
+                        <span class="ql-formats"><select class="ql-header"></select><select class="ql-font"></select></span>
+                        <span class="ql-formats"><button class="ql-bold"></button><button class="ql-italic"></button><button class="ql-underline"></button></span>
+                        <span class="ql-formats"><select class="ql-color"></select><select class="ql-background"></select></span>
+                        <span class="ql-formats"><button class="ql-list" value="ordered"></button><button class="ql-list" value="bullet"></button></span>
+                        <span class="ql-formats"><button class="ql-clean"></button></span>
+                    </div>
+                    <div id="quill-editor" class="bg-white"></div>
+                </div>
+            </div>
+            <div class="p-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50 shrink-0">
+                <button type="button" onclick="closeModal('add-note-modal')" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-200 rounded-lg transition">Cancel</button>
+                <button type="button" id="btn-save-note" onclick="handleSaveNote()" class="bg-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-purple-700 transition flex items-center gap-2">Save Note</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="add-event-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden transform transition-all my-auto">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h3 id="event-modal-title" class="font-bold text-lg text-slate-800">Add Event</h3>
                 <button onclick="closeModal('add-event-modal')" class="text-slate-400 hover:text-slate-600 transition"><i class="ph ph-x text-xl"></i></button>
             </div>
             <form id="form-add-event" onsubmit="handleSaveEvent(event)" class="p-6 space-y-4">
@@ -160,6 +607,10 @@
                     <label class="block text-sm font-semibold mb-1">Event Title</label>
                     <input type="text" id="event-title" required placeholder="e.g., Mom's Birthday" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none">
                 </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Description (Optional)</label>
+                    <textarea id="event-desc" rows="2" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none custom-scrollbar"></textarea>
+                </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-semibold mb-1">Repeat</label>
@@ -180,36 +631,60 @@
                         </select>
                     </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-semibold mb-1">Description (Optional)</label>
-                    <textarea id="event-desc" rows="2" placeholder="Additional details..." class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none custom-scrollbar"></textarea>
-                </div>
                 <div class="pt-4 flex justify-end gap-3">
                     <button type="button" onclick="closeModal('add-event-modal')" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition">Cancel</button>
-                    <button type="submit" id="btn-save-event" class="bg-rose-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-rose-700 transition flex items-center gap-2">
-                        Save Event
-                    </button>
+                    <button type="submit" id="btn-save-event" class="bg-rose-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-rose-700 transition flex items-center gap-2">Save Event</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- -->
     <script>
-<!-- ... existing code ... -->
+        let githubCreds = { pat: '', user: '', repo: '' };
+        let appData = { tasks: [], cashbook: [], notes: [], events: [] };
+        let currentCashbookMonth = '';
+        
+        let calendarDate = new Date(); // Track currently viewed month in Calendar
+        let selectedDayStr = ''; // YYYY-MM-DD
+        let quillEditor = null; // Global instance for Quill
+
+        // Format Utilities
+        function getLocalDateString() {
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        }
+        function getLocalTimeString() {
+            const now = new Date();
+            return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const msgEl = document.getElementById('toast-message');
+            msgEl.innerHTML = message;
+            
+            if (type === 'error') msgEl.className = 'bg-white px-6 py-3 rounded-lg shadow-lg border-l-4 border-red-500 text-red-700 font-medium';
+            else if (type === 'success') msgEl.className = 'bg-white px-6 py-3 rounded-lg shadow-lg border-l-4 border-green-500 text-green-700 font-medium';
+            else msgEl.className = 'bg-white px-6 py-3 rounded-lg shadow-lg border-l-4 border-blue-500 text-blue-700 font-medium';
+
+            container.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-[-20px]');
+            setTimeout(() => container.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-20px]'), 3000);
+        }
+
+        function toggleLoader(show) { document.getElementById('global-loader').style.display = show ? 'flex' : 'none'; }
+
+        // Modal Utilities
         function openModal(modalId) {
             document.getElementById(modalId).classList.remove('hidden');
-            
             if(modalId === 'add-cashbook-modal') {
                 document.getElementById('form-add-cashbook').reset();
                 document.getElementById('cb-date').value = getLocalDateString();
-                if (document.getElementById('cb-time')) {
-                    document.getElementById('cb-time').value = getLocalTimeString();
-                }
+                document.getElementById('cb-time').value = getLocalTimeString();
                 document.getElementById('cb-edit-id').value = '';
                 document.getElementById('cb-modal-title').textContent = 'Add Cashbook Entry';
                 document.getElementById('btn-save-cashbook').innerHTML = 'Save Entry';
             }
-
             if(modalId === 'add-task-modal') {
                 document.getElementById('form-add-task').reset();
                 document.getElementById('task-issue-date').value = getLocalDateString();
@@ -219,17 +694,179 @@
                 document.getElementById('task-modal-title').textContent = 'Add New Task';
                 document.getElementById('btn-save-task').innerHTML = 'Save Task';
             }
+        }
 
-            if(modalId === 'add-event-modal') {
-                document.getElementById('form-add-event').reset();
-                document.getElementById('event-date').value = getLocalDateString();
-                document.getElementById('event-reminder').value = 'None';
-                document.getElementById('event-edit-id').value = '';
-                document.getElementById('event-modal-title').textContent = 'Add Calendar Event';
-                document.getElementById('btn-save-event').innerHTML = 'Save Event';
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function toggleAppView(showApp) {
+            const loginView = document.getElementById('login-view');
+            const appView = document.getElementById('app-view');
+            if (showApp) {
+                loginView.classList.add('hidden');
+                appView.classList.remove('hidden');
+                document.body.classList.remove('bg-slate-50');
+            } else {
+                loginView.classList.remove('hidden');
+                appView.classList.add('hidden');
+                document.body.classList.add('bg-slate-50');
             }
         }
-<!-- ... existing code ... -->
+
+        function switchTab(tabId, btnElement) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+                tab.classList.remove('block');
+            });
+            document.getElementById(tabId).classList.remove('hidden');
+            document.getElementById(tabId).classList.add('block');
+
+            if (btnElement) {
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+                btnElement.classList.add('active');
+            }
+            
+            // Special initialization for specific tabs
+            if (tabId === 'tab-events' && !document.getElementById('cal-grid').innerHTML) {
+                renderCalendarUI(); 
+            }
+        }
+
+        // Authentication & Init
+        function initAuth() {
+            const saved = localStorage.getItem('dash_creds');
+            if (saved) {
+                githubCreds = JSON.parse(saved);
+                toggleAppView(true);
+                loadAllData();
+            } else {
+                toggleAppView(false);
+            }
+            
+            // Initialize Quill Editor once on load
+            quillEditor = new Quill('#quill-editor', {
+                theme: 'snow',
+                modules: { toolbar: '#quill-toolbar' },
+                placeholder: 'Write your notes here...'
+            });
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const pat = document.getElementById('input-pat').value.trim();
+            const user = document.getElementById('input-user').value.trim();
+            const repo = document.getElementById('input-repo').value.trim();
+            if (!pat || !user || !repo) return showToast('Please fill all fields', 'error');
+
+            githubCreds = { pat, user, repo };
+            localStorage.setItem('dash_creds', JSON.stringify(githubCreds));
+            showToast('Credentials Saved!');
+            toggleAppView(true);
+            loadAllData();
+        }
+
+        function logout() {
+            localStorage.removeItem('dash_creds');
+            githubCreds = { pat: '', user: '', repo: '' };
+            appData = { tasks: [], cashbook: [], notes: [], events: [] };
+            initAuth();
+            showToast('Disconnected successfully', 'info');
+        }
+
+        //        function textToBase64(text) { return btoa(unescape(encodeURIComponent(text))); }
+        function base64ToText(base64) { return decodeURIComponent(escape(atob(base64))); }
+
+        function csvToJson(csvString) {
+            const lines = csvString.trim().split(/\r?\n/);
+            if (lines.length === 0) return [];
+            const headers = lines[0].split(',').map(h => h.trim());
+            const result = [];
+            const splitRegex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
+
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                const currentline = lines[i].split(splitRegex);
+                const obj = {};
+                for (let j = 0; j < headers.length; j++) {
+                    let val = currentline[j] ? currentline[j].trim() : '';
+                    if (val.startsWith('"') && val.endsWith('"')) {
+                        val = val.substring(1, val.length - 1).replace(/""/g, '"');
+                    }
+                    obj[headers[j]] = val;
+                }
+                result.push(obj);
+            }
+            return result;
+        }
+
+        function jsonToCsv(jsonArray) {
+            if (!jsonArray || !jsonArray.length) return '';
+            const headerSet = new Set();
+            jsonArray.forEach(row => Object.keys(row).forEach(k => headerSet.add(k)));
+            const headers = Array.from(headerSet);
+            let csv = headers.join(',') + '\n';
+            jsonArray.forEach(row => {
+                const values = headers.map(header => {
+                    let val = row[header] === null || row[header] === undefined ? '' : String(row[header]);
+                    if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+                        val = `"${val.replace(/"/g, '""')}"`;
+                    }
+                    return val;
+                });
+                csv += values.join(',') + '\n';
+            });
+            return csv;
+        }
+
+        const fileSHAs = { 'tasks.csv': null, 'cashbook.csv': null, 'notes.csv': null, 'events.csv': null };
+
+        async function fetchGitHubFile(filename) {
+            const { pat, user, repo } = githubCreds;
+            const timestamp = new Date().getTime();
+            const url = `https://api.github.com/repos/${user}/${repo}/contents/${filename}?t=${timestamp}`;
+
+            const response = await fetch(url, {
+                headers: { 'Authorization': `token ${pat}`, 'Accept': 'application/vnd.github.v3+json' },
+                cache: 'no-store'
+            });
+
+            if (!response.ok) {
+                if (response.status === 404) return []; // Auto-create on put if missing
+                throw new Error(`Failed to fetch ${filename} (Status: ${response.status})`);
+            }
+            
+            const data = await response.json();
+            fileSHAs[filename] = data.sha;
+            return csvToJson(base64ToText(data.content));
+        }
+
+        async function updateGitHubFile(filename, jsonData, commitMessage) {
+            const { pat, user, repo } = githubCreds;
+            const encodedContent = textToBase64(jsonToCsv(jsonData));
+            const bodyPayload = { message: commitMessage, content: encodedContent };
+            if (fileSHAs[filename]) bodyPayload.sha = fileSHAs[filename];
+
+            const response = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${filename}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${pat}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(bodyPayload)
+            });
+
+            if (!response.ok) {
+                const errDetails = await response.json().catch(() => ({}));
+                throw new Error(errDetails.message || `Failed to update ${filename}`);
+            }
+            
+            const data = await response.json();
+            fileSHAs[filename] = data.content.sha;
+            return data;
+        }
+
         async function loadAllData() {
             toggleLoader(true);
             try {
@@ -240,35 +877,23 @@
                     fetchGitHubFile('events.csv')
                 ]);
                 
-                appData.tasks = tasks;
-                appData.cashbook = cashbook;
-                appData.notes = notes;
-                appData.events = events;
+                appData.tasks = tasks; appData.cashbook = cashbook; appData.notes = notes; appData.events = events;
                 
-                renderTasksUI();
-                renderCashbookUI(); 
-                renderNotesUI();
-                renderCalendarUI();
-                checkNotifications();
-                
+                renderTasksUI(); renderCashbookUI(); renderNotesUI(); renderCalendarUI(); checkNotifications();
                 showToast('Data Synced Successfully', 'success');
             } catch (error) {
-                console.error(error);
-                showToast(`Sync Error: ${error.message}`, 'error');
+                console.error(error); showToast(`Sync Error: ${error.message}`, 'error');
             } finally {
                 toggleLoader(false);
             }
         }
 
-        /* ==========================================================================
-           NOTIFICATION SYSTEM LOGIC
-           ========================================================================== */
-        function checkNotifications() {
+        //        function checkNotifications() {
             const alerts = [];
             const todayStr = getLocalDateString();
             const todayTime = new Date(todayStr).getTime();
 
-            // Check Tasks
+            // 1. Check Tasks
             appData.tasks.forEach(task => {
                 if(task.Status === 'Completed' || !task['Due Date'] || !task.Reminder || task.Reminder === 'None') return;
                 
@@ -278,27 +903,22 @@
 
                 if(task.Reminder === '1 Day') triggerDate.setDate(triggerDate.getDate() - 1);
                 if(task.Reminder === '1 Week') triggerDate.setDate(triggerDate.getDate() - 7);
+                if(task.Reminder === '1 Month') triggerDate.setMonth(triggerDate.getMonth() - 1);
 
                 if(todayTime >= triggerDate.getTime() && todayTime <= dueTime) {
                     alerts.push({
-                        title: task['Task Name'],
-                        date: task['Due Date'],
-                        type: 'Task Due',
-                        icon: 'ph-check-square-offset',
-                        color: 'text-blue-600 bg-blue-100'
+                        title: task['Task Name'], date: task['Due Date'], type: 'Task Due',
+                        icon: 'ph-check-square-offset', color: 'text-blue-600 bg-blue-100'
                     });
                 } else if (todayTime > dueTime) {
                     alerts.push({
-                        title: task['Task Name'],
-                        date: task['Due Date'],
-                        type: 'Overdue Task',
-                        icon: 'ph-warning-circle',
-                        color: 'text-red-600 bg-red-100'
+                        title: task['Task Name'], date: task['Due Date'], type: 'Overdue Task',
+                        icon: 'ph-warning-circle', color: 'text-red-600 bg-red-100'
                     });
                 }
             });
 
-            // Check Events (Scanning the next 45 days for recurring matches)
+            // 2. Check Events (Scan next 45 days for repeating logic)
             const checkEnd = new Date();
             checkEnd.setDate(checkEnd.getDate() + 45);
             
@@ -307,24 +927,15 @@
                 const [ey, em, ed] = e.Date.split('-').map(Number);
                 const eventStartDate = new Date(ey, em - 1, ed);
 
-                // Check every day from today until 45 days from now
                 let scanDate = new Date(todayStr);
                 while(scanDate <= checkEnd) {
-                    const sY = scanDate.getFullYear();
-                    const sM = scanDate.getMonth();
-                    const sD = scanDate.getDate();
-
+                    const sY = scanDate.getFullYear(); const sM = scanDate.getMonth(); const sD = scanDate.getDate();
                     let occurs = false;
                     if (scanDate >= eventStartDate) {
-                        if (!e.Repeat || e.Repeat === 'Never') {
-                            occurs = (sY === ey && sM === em - 1 && sD === ed);
-                        } else if (e.Repeat === 'Daily') {
-                            occurs = true;
-                        } else if (e.Repeat === 'Monthly') {
-                            if (sD === ed) occurs = true;
-                        } else if (e.Repeat === 'Yearly') {
-                            if (sM === em - 1 && sD === ed) occurs = true;
-                        }
+                        if (!e.Repeat || e.Repeat === 'Never') occurs = (sY === ey && sM === em - 1 && sD === ed);
+                        else if (e.Repeat === 'Daily') occurs = true;
+                        else if (e.Repeat === 'Monthly') occurs = (sD === ed);
+                        else if (e.Repeat === 'Yearly') occurs = (sM === em - 1 && sD === ed);
                     }
 
                     if(occurs) {
@@ -333,25 +944,13 @@
                         if(e.Reminder === '1 Week') triggerDate.setDate(triggerDate.getDate() - 7);
                         if(e.Reminder === '1 Month') triggerDate.setMonth(triggerDate.getMonth() - 1);
 
-                        // If today is on or after the trigger date, but BEFORE the event date
                         if(todayTime >= triggerDate.getTime() && todayTime <= scanDate.getTime()) {
                             let icon = 'ph-calendar-star'; let color = 'text-purple-600 bg-purple-100';
                             if(e.Type === 'Birthday') { icon = 'ph-cake'; color = 'text-rose-600 bg-rose-100'; }
                             if(e.Type === 'Anniversary') { icon = 'ph-heart'; color = 'text-pink-600 bg-pink-100'; }
-                            
                             const displayStr = `${sY}-${String(sM+1).padStart(2,'0')}-${String(sD).padStart(2,'0')}`;
-
-                            // Check to avoid duplicate alerts for daily repeats
-                            const isDuplicate = alerts.some(a => a.title === e.Title && a.date === displayStr);
-                            
-                            if(!isDuplicate) {
-                                alerts.push({
-                                    title: e.Title,
-                                    date: displayStr,
-                                    type: `Upcoming ${e.Type}`,
-                                    icon: icon,
-                                    color: color
-                                });
+                            if(!alerts.some(a => a.title === e.Title && a.date === displayStr)) {
+                                alerts.push({ title: e.Title, date: displayStr, type: `Upcoming ${e.Type}`, icon: icon, color: color });
                             }
                         }
                     }
@@ -367,9 +966,7 @@
 
             if(alerts.length > 0) {
                 desktopBadge.textContent = alerts.length;
-                desktopBadge.classList.remove('hidden');
-                mobileBadge.classList.remove('hidden');
-                
+                desktopBadge.classList.remove('hidden'); mobileBadge.classList.remove('hidden');
                 alerts.sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(a => {
                     const niceDate = new Date(a.date).toLocaleString('default', { month: 'short', day: 'numeric', year: 'numeric' });
                     listEl.innerHTML += `
@@ -386,26 +983,82 @@
                     `;
                 });
             } else {
-                desktopBadge.classList.add('hidden');
-                mobileBadge.classList.add('hidden');
+                desktopBadge.classList.add('hidden'); mobileBadge.classList.add('hidden');
                 listEl.innerHTML = `<div class="p-8 text-center text-slate-400 font-medium">No upcoming alerts right now! 🎉</div>`;
             }
         }
 
-        /* ==========================================================================
-           TASK MODULE LOGIC
-           ========================================================================== */
-<!-- ... existing code ... -->
+        //        function renderTasksUI() {
+            const pendingList = document.getElementById('list-pending-tasks');
+            const completedList = document.getElementById('list-completed-tasks');
+            pendingList.innerHTML = ''; completedList.innerHTML = '';
+            
+            let pendingArr = []; let completedArr = [];
+            
+            appData.tasks.forEach(task => {
+                if(!task.ID) return;
+                if(task.Status === 'Completed') completedArr.push(task); else pendingArr.push(task);
+            });
+
+            // Sort logic as requested
+            const prioWeight = { 'High': 3, 'Medium': 2, 'Low': 1, '': 0 };
+            pendingArr.sort((a, b) => prioWeight[b.Priority || ''] - prioWeight[a.Priority || '']);
+            
+            completedArr.sort((a, b) => {
+                const dateA = new Date(`${a['Completed Date'] || '1970-01-01'}T${a['Completed Time'] || '00:00'}:00`);
+                const dateB = new Date(`${b['Completed Date'] || '1970-01-01'}T${b['Completed Time'] || '00:00'}:00`);
+                return dateB - dateA;
+            });
+
+            const drawTask = (task, isComp, container) => {
+                let prioColor = 'text-slate-500 bg-slate-100';
+                if(task.Priority === 'High') prioColor = 'text-red-700 bg-red-100';
+                if(task.Priority === 'Medium') prioColor = 'text-blue-700 bg-blue-100';
+
+                const li = document.createElement('li');
+                li.className = `p-4 hover:bg-slate-50 transition group flex flex-col sm:flex-row sm:items-center justify-between gap-4`;
+                li.innerHTML = `
+                    <div class="flex-1 min-w-0 cursor-pointer" onclick="viewTaskDetails('${task.ID}')">
+                        <div class="flex items-center gap-2 mb-1">
+                            <h4 class="font-semibold text-slate-800 truncate ${isComp ? 'line-through text-slate-500' : ''}">${task['Task Name']}</h4>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${prioColor}">${task.Priority}</span>
+                        </div>
+                        <p class="text-xs text-slate-500 truncate">${task.Description || 'No description'}</p>
+                        ${task['Due Date'] && !isComp ? `<p class="text-xs text-red-500 mt-1"><i class="ph ph-clock mr-1"></i>Due: ${task['Due Date']}</p>` : ''}
+                        ${isComp ? `<p class="text-xs text-green-600 mt-1"><i class="ph ph-check-circle mr-1"></i>Done: ${task['Completed Date']} at ${task['Completed Time']}</p>` : ''}
+                    </div>
+                    <div class="shrink-0 flex items-center justify-center gap-2">
+                        <button onclick="toggleTaskStatus('${task.ID}')" class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition ${isComp ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'}">
+                            <i class="ph ${isComp ? 'ph-arrow-u-up-left' : 'ph-check'} text-lg"></i> ${isComp ? 'Undo' : 'Complete'}
+                        </button>
+                        <button onclick="editTask('${task.ID}')" class="p-2 rounded-lg text-slate-400 hover:bg-blue-100 hover:text-blue-600 transition bg-slate-50" title="Edit"><i class="ph ph-pencil-simple text-lg"></i></button>
+                        <button onclick="deleteTask('${task.ID}')" class="p-2 rounded-lg text-red-500 hover:bg-red-100 hover:text-red-600 transition bg-red-50" title="Delete"><i class="ph ph-trash text-lg"></i></button>
+                    </div>
+                `;
+                container.appendChild(li);
+            };
+
+            pendingArr.forEach(t => drawTask(t, false, pendingList));
+            completedArr.forEach(t => drawTask(t, true, completedList));
+
+            document.getElementById('count-pending').textContent = pendingArr.length;
+            document.getElementById('count-completed').textContent = completedArr.length;
+            document.getElementById('metric-total-tasks').textContent = appData.tasks.length;
+            document.getElementById('metric-pending-tasks').textContent = pendingArr.length;
+            
+            if(pendingArr.length === 0) pendingList.innerHTML = '<div class="p-8 text-center text-slate-400">No pending tasks! 🎉</div>';
+            if(completedArr.length === 0) completedList.innerHTML = '<div class="p-8 text-center text-slate-400">No completed tasks yet.</div>';
+        }
+
         async function handleAddTask(e) {
             e.preventDefault();
             const btn = document.getElementById('btn-save-task');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<div class="loader" style="width:16px;height:16px;border-width:2px;"></div> Saving...';
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<div class="loader" style="width:16px;height:16px;border-width:2px;border-top-color:white;"></div> Saving...';
             btn.disabled = true;
 
             const editId = document.getElementById('task-edit-id').value;
-            
-            const taskData = {
+            const updatedData = {
                 'Task Name': document.getElementById('task-name').value.trim(),
                 'Description': document.getElementById('task-desc').value.trim(),
                 'Priority': document.getElementById('task-priority').value,
@@ -413,50 +1066,31 @@
                 'Reminder': document.getElementById('task-reminder').value
             };
 
-            let commitMsg = '';
-            let backupTasks = JSON.parse(JSON.stringify(appData.tasks));
-
+            let commitMsg = ''; let backup = JSON.parse(JSON.stringify(appData.tasks));
             if(editId) {
-                const index = appData.tasks.findIndex(t => t.ID === editId);
-                if (index > -1) {
-                    appData.tasks[index] = { ...appData.tasks[index], ...taskData };
-                    commitMsg = `Edit task: ${taskData['Task Name']}`;
-                }
+                const idx = appData.tasks.findIndex(t => t.ID === editId);
+                if (idx > -1) { appData.tasks[idx] = { ...appData.tasks[idx], ...updatedData }; commitMsg = `Edit task: ${updatedData['Task Name']}`; }
             } else {
                 const newTask = {
                     'ID': 'TSK-' + Date.now(),
-                    'Issue Date': document.getElementById('task-issue-date').value,
-                    'Issue Time': document.getElementById('task-issue-time').value,
-                    'Status': 'Pending',
-                    'Completed Date': '',
-                    'Completed Time': '',
-                    ...taskData
+                    'Issue Date': document.getElementById('task-issue-date').value, 'Issue Time': document.getElementById('task-issue-time').value,
+                    'Status': 'Pending', 'Completed Date': '', 'Completed Time': '', ...updatedData
                 };
-                appData.tasks.push(newTask);
-                commitMsg = `Add task: ${newTask['Task Name']}`;
+                appData.tasks.push(newTask); commitMsg = `Add task: ${newTask['Task Name']}`;
             }
 
             try {
                 await updateGitHubFile('tasks.csv', appData.tasks, commitMsg);
-                renderTasksUI();
-                renderCalendarUI(); // Refresh calendar to show new task dot
-                checkNotifications(); // Recalculate alerts
-                closeModal('add-task-modal');
-                showToast(editId ? 'Task updated successfully!' : 'Task added successfully!');
+                renderTasksUI(); renderCalendarUI(); checkNotifications();
+                closeModal('add-task-modal'); showToast(editId ? 'Task updated!' : 'Task added!');
             } catch (error) {
-                console.error(error);
-                appData.tasks = backupTasks;
-                showToast(`Error: ${error.message}`, 'error'); 
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
+                console.error(error); appData.tasks = backup; showToast(`Error: ${error.message}`, 'error'); 
+            } finally { btn.innerHTML = orig; btn.disabled = false; }
         }
 
-        function editTask(taskId) {
-            const task = appData.tasks.find(t => t.ID === taskId);
+        function editTask(id) {
+            const task = appData.tasks.find(t => t.ID === id);
             if(!task) return;
-
             document.getElementById('task-edit-id').value = task.ID;
             document.getElementById('task-name').value = task['Task Name'];
             document.getElementById('task-desc').value = task.Description;
@@ -465,33 +1099,340 @@
             document.getElementById('task-issue-date').value = task['Issue Date'] || '';
             document.getElementById('task-issue-time').value = task['Issue Time'] || '';
             document.getElementById('task-reminder').value = task.Reminder || 'None';
-
             document.getElementById('task-modal-title').textContent = 'Edit Task';
             document.getElementById('btn-save-task').innerHTML = 'Update Task';
-            
             document.getElementById('add-task-modal').classList.remove('hidden');
         }
 
-        async function toggleTaskStatus(taskId) {
-<!-- ... existing code ... -->
+        async function toggleTaskStatus(id) {
+            const idx = appData.tasks.findIndex(t => t.ID === id);
+            if(idx === -1) return;
+            toggleLoader(true);
+            const task = appData.tasks[idx];
+            const isComp = task.Status === 'Completed';
+            const bkpStatus = task.Status; const bkpDate = task['Completed Date']; const bkpTime = task['Completed Time'];
+
+            if (isComp) { task.Status = 'Pending'; task['Completed Date'] = ''; task['Completed Time'] = ''; } 
+            else { task.Status = 'Completed'; task['Completed Date'] = getLocalDateString(); task['Completed Time'] = getLocalTimeString(); }
+
             try {
                 await updateGitHubFile('tasks.csv', appData.tasks, `Toggle status: ${task['Task Name']}`);
-                renderTasksUI();
-                renderCalendarUI(); // Refresh calendar to update dot colors
-                checkNotifications();
-                showToast(isCurrentlyCompleted ? 'Task moved to Pending' : 'Task marked as Completed!');
-            } catch (error) {
-<!-- ... existing code ... -->
-        async function deleteTask(taskId) {
-<!-- ... existing code ... -->
+                renderTasksUI(); renderCalendarUI(); checkNotifications();
+                showToast(isComp ? 'Task moved to Pending' : 'Task marked as Completed!');
+            } catch (err) {
+                console.error(err); task.Status = bkpStatus; task['Completed Date'] = bkpDate; task['Completed Time'] = bkpTime; showToast(err.message, 'error');
+            } finally { toggleLoader(false); }
+        }
+
+        async function deleteTask(id) {
+            if(!confirm("Delete this task?")) return;
+            const idx = appData.tasks.findIndex(t => t.ID === id);
+            if(idx === -1) return;
+            toggleLoader(true);
+            const delTask = appData.tasks.splice(idx, 1)[0]; 
             try {
-                await updateGitHubFile('tasks.csv', appData.tasks, `Delete task: ${deletedTask['Task Name']}`);
-                renderTasksUI();
-                renderCalendarUI(); // Refresh calendar to remove dot
-                checkNotifications();
+                await updateGitHubFile('tasks.csv', appData.tasks, `Delete task: ${delTask['Task Name']}`);
+                renderTasksUI(); renderCalendarUI(); checkNotifications();
                 showToast('Task deleted successfully!');
             } catch (error) {
-<!-- ... existing code ... -->
+                console.error(error); appData.tasks.splice(idx, 0, delTask); showToast(`Error: ${error.message}`, 'error');
+            } finally { toggleLoader(false); }
+        }
+
+        function viewTaskDetails(id) {
+            const task = appData.tasks.find(t => t.ID === id);
+            if(!task) return;
+            document.getElementById('detail-name').textContent = task['Task Name'];
+            const pEl = document.getElementById('detail-priority');
+            pEl.textContent = task.Priority;
+            pEl.className = `px-3 py-1 rounded-full text-xs font-bold ${task.Priority === 'High' ? 'bg-red-100 text-red-700' : task.Priority === 'Medium' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'}`;
+            document.getElementById('detail-desc').textContent = task.Description || 'No description provided.';
+            document.getElementById('detail-due').textContent = task['Due Date'] || 'None';
+            document.getElementById('detail-issue').textContent = `${task['Issue Date'] || '-'} at ${task['Issue Time'] || '-'}`;
+            const sEl = document.getElementById('detail-status');
+            sEl.textContent = task.Status; sEl.className = `font-medium ${task.Status === 'Completed' ? 'text-green-600' : 'text-amber-600'}`;
+            const cWrap = document.getElementById('detail-completed-wrap');
+            if(task.Status === 'Completed') {
+                cWrap.classList.remove('hidden'); document.getElementById('detail-completed').textContent = `${task['Completed Date']} at ${task['Completed Time']}`;
+            } else cWrap.classList.add('hidden');
+            openModal('detail-task-modal');
+        }
+
+        //        function renderCashbookUI() {
+            let cashBal = 0; let onlineBal = 0;
+            const monthsMap = new Map(); const personLedger = {};
+            
+            appData.cashbook.forEach(e => {
+                if(!e.ID || !e.Amount) return;
+                const amt = parseFloat(e.Amount) || 0;
+                
+                if(e['Transaction Type'] === 'In') {
+                    if(e['Payment Mode'] === 'Cash') cashBal += amt; else onlineBal += amt;
+                    if(e.Person && e.Person.trim()) personLedger[e.Person.trim()] = (personLedger[e.Person.trim()] || 0) - amt;
+                } else if (e['Transaction Type'] === 'Out') {
+                    if(e['Payment Mode'] === 'Cash') cashBal -= amt; else onlineBal -= amt;
+                    if(e.Person && e.Person.trim()) personLedger[e.Person.trim()] = (personLedger[e.Person.trim()] || 0) + amt;
+                }
+
+                if(e.Date) {
+                    const parts = e.Date.split('-');
+                    if (parts.length >= 2) {
+                        const mKey = `${parts[0]}-${parts[1]}`;
+                        if(!monthsMap.has(mKey)) monthsMap.set(mKey, []);
+                        monthsMap.get(mKey).push(e);
+                    }
+                }
+            });
+
+            let tGet = 0; let tGive = 0;
+            const pContainer = document.getElementById('person-balances-container'); pContainer.innerHTML = ''; let hasP = false;
+            for (const [p, b] of Object.entries(personLedger)) {
+                if (b === 0) continue; hasP = true;
+                if (b > 0) tGet += b; else tGive += Math.abs(b);
+                pContainer.innerHTML += `
+                    <div class="bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center shadow-sm">
+                        <span class="font-medium text-slate-700 truncate mr-2 text-xs" title="${p}">${p}</span>
+                        <div class="text-right">
+                            <span class="block text-[10px] font-semibold ${b > 0 ? 'text-green-600' : 'text-red-600'}">${b > 0 ? 'You get' : 'You give'}</span>
+                            <span class="block font-bold text-sm ${b > 0 ? 'text-green-600' : 'text-red-600'}">₹${Math.abs(b).toLocaleString('en-IN')}</span>
+                        </div>
+                    </div>`;
+            }
+            if(hasP) pContainer.classList.remove('hidden'); else pContainer.classList.add('hidden');
+
+            document.getElementById('cb-global-cash').textContent = cashBal.toLocaleString('en-IN');
+            document.getElementById('cb-global-online').textContent = onlineBal.toLocaleString('en-IN');
+            
+            document.getElementById('metric-cash-balance').textContent = cashBal.toLocaleString('en-IN');
+            document.getElementById('metric-online-balance').textContent = onlineBal.toLocaleString('en-IN');
+            document.getElementById('metric-will-get').textContent = tGet.toLocaleString('en-IN');
+            document.getElementById('metric-will-give').textContent = tGive.toLocaleString('en-IN');
+
+            const fContainer = document.getElementById('cashbook-month-filters'); fContainer.innerHTML = '';
+            const sortedMonths = Array.from(monthsMap.keys()).sort().reverse();
+            
+            if(sortedMonths.length === 0) {
+                document.getElementById('list-cashbook-entries').innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">No entries yet! Click "Add Entry".</td></tr>`;
+                document.getElementById('cb-month-summary-container').style.display = 'none';
+                return;
+            }
+
+            if(!currentCashbookMonth || !monthsMap.has(currentCashbookMonth)) currentCashbookMonth = sortedMonths[0];
+
+            sortedMonths.forEach(mKey => {
+                const [yyyy, mm] = mKey.split('-');
+                const mName = new Date(yyyy, parseInt(mm)-1).toLocaleString('default', { month: 'short', year: 'numeric' });
+                const btn = document.createElement('button');
+                btn.className = `month-btn px-4 py-1.5 rounded-full text-sm font-medium border whitespace-nowrap transition ${mKey === currentCashbookMonth ? 'active' : 'border-slate-200 text-slate-600 hover:bg-slate-100'}`;
+                btn.textContent = mName;
+                btn.onclick = () => { currentCashbookMonth = mKey; renderCashbookUI(); };
+                fContainer.appendChild(btn);
+            });
+
+            const tbody = document.getElementById('list-cashbook-entries'); tbody.innerHTML = '';
+            let mIn = 0; let mOut = 0;
+            
+            const toDisp = monthsMap.get(currentCashbookMonth).sort((a,b) => {
+                const dA = new Date(`${a.Date}T${a.Time || '00:00'}:00`); const dB = new Date(`${b.Date}T${b.Time || '00:00'}:00`);
+                return dB - dA;
+            });
+
+            toDisp.forEach(e => {
+                const amt = parseFloat(e.Amount) || 0;
+                const isIn = e['Transaction Type'] === 'In';
+                if(isIn) mIn+=amt; else mOut+=amt;
+                
+                let tDisp = '-';
+                if (e.Time) { const [h, m] = e.Time.split(':'); const d = new Date(); d.setHours(h, m); tDisp = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 text-slate-500 whitespace-nowrap">${e.Date}</td>
+                        <td class="p-3 text-slate-500 whitespace-nowrap font-medium text-xs">${tDisp}</td>
+                        <td class="p-3 font-medium text-slate-800">
+                            ${e.Description}
+                            ${e.Person ? `<span class="block text-xs text-slate-400 mt-0.5"><i class="ph ph-user mr-1"></i>${e.Person}</span>` : ''}
+                        </td>
+                        <td class="p-3">
+                            <span class="px-2 py-1 rounded text-xs font-semibold ${e['Payment Mode']==='Cash' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'}">${e['Payment Mode']}</span>
+                        </td>
+                        <td class="p-3 text-right font-mono font-bold text-green-600">${isIn ? `₹${amt.toLocaleString('en-IN')}` : '-'}</td>
+                        <td class="p-3 text-right font-mono font-bold text-red-600">${!isIn ? `₹${amt.toLocaleString('en-IN')}` : '-'}</td>
+                        <td class="p-3 text-center flex justify-center gap-1">
+                            <button onclick="editCashbookEntry('${e.ID}')" class="text-slate-400 hover:text-blue-500 hover:bg-blue-50 p-2 rounded transition" title="Edit"><i class="ph ph-pencil-simple text-lg"></i></button>
+                            <button onclick="deleteCashbookEntry('${e.ID}')" class="text-slate-400 hover:text-red-500 hover:bg-red-50 p-2 rounded transition" title="Delete"><i class="ph ph-trash text-lg"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('cb-month-in').textContent = mIn.toLocaleString('en-IN');
+            document.getElementById('cb-month-out').textContent = mOut.toLocaleString('en-IN');
+            document.getElementById('cb-month-summary-container').style.display = 'grid';
+        }
+
+        async function handleAddCashbook(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-save-cashbook'); const orig = btn.innerHTML;
+            btn.innerHTML = '<div class="loader" style="width:16px;height:16px;border-width:2px; border-top-color: white;"></div> Saving...'; btn.disabled = true;
+
+            const editId = document.getElementById('cb-edit-id').value;
+            const updatedData = {
+                'Date': document.getElementById('cb-date').value, 'Time': document.getElementById('cb-time').value,
+                'Amount': document.getElementById('cb-amount').value, 'Transaction Type': document.getElementById('cb-type').value,
+                'Payment Mode': document.getElementById('cb-mode').value, 'Person': document.getElementById('cb-person').value.trim(),
+                'Description': document.getElementById('cb-desc').value.trim()
+            };
+
+            const dParts = updatedData.Date.split('-');
+            if (dParts.length >= 2) currentCashbookMonth = `${dParts[0]}-${dParts[1]}`;
+
+            let commitMsg = ''; let backup = JSON.parse(JSON.stringify(appData.cashbook));
+
+            if (editId) {
+                const idx = appData.cashbook.findIndex(e => e.ID === editId);
+                if (idx > -1) { appData.cashbook[idx] = { ...appData.cashbook[idx], ...updatedData }; commitMsg = `Edit cashbook entry`; }
+            } else {
+                const newEntry = { 'ID': 'CB-' + Date.now(), ...updatedData };
+                appData.cashbook.push(newEntry); commitMsg = `Add cashbook entry`;
+            }
+
+            try {
+                await updateGitHubFile('cashbook.csv', appData.cashbook, commitMsg);
+                renderCashbookUI(); closeModal('add-cashbook-modal'); showToast(editId ? 'Entry updated!' : 'Entry added!');
+            } catch (err) {
+                console.error(err); appData.cashbook = backup; showToast(`Error: ${err.message}`, 'error'); 
+            } finally { btn.innerHTML = orig; btn.disabled = false; }
+        }
+
+        function editCashbookEntry(id) {
+            const e = appData.cashbook.find(e => e.ID === id); if(!e) return;
+            document.getElementById('cb-edit-id').value = e.ID;
+            document.getElementById('cb-type').value = e['Transaction Type'];
+            document.getElementById('cb-amount').value = e.Amount;
+            document.getElementById('cb-date').value = e.Date;
+            document.getElementById('cb-time').value = e.Time || '';
+            document.getElementById('cb-mode').value = e['Payment Mode'];
+            document.getElementById('cb-desc').value = e.Description;
+            document.getElementById('cb-person').value = e.Person || '';
+            document.getElementById('cb-modal-title').textContent = 'Edit Cashbook Entry';
+            document.getElementById('btn-save-cashbook').innerHTML = 'Update Entry';
+            document.getElementById('add-cashbook-modal').classList.remove('hidden');
+        }
+
+        async function deleteCashbookEntry(id) {
+            if(!confirm("Delete this cashbook entry?")) return;
+            const idx = appData.cashbook.findIndex(e => e.ID === id); if(idx === -1) return;
+            toggleLoader(true);
+            const del = appData.cashbook.splice(idx, 1)[0]; 
+            try {
+                await updateGitHubFile('cashbook.csv', appData.cashbook, `Delete cashbook entry`);
+                renderCashbookUI(); showToast('Entry deleted successfully!');
+            } catch (err) {
+                console.error(err); appData.cashbook.splice(idx, 0, del); showToast(`Error: ${err.message}`, 'error');
+            } finally { toggleLoader(false); }
+        }
+
+        //        function renderNotesUI() {
+            const grid = document.getElementById('notes-grid'); grid.innerHTML = '';
+            if(!appData.notes || appData.notes.length === 0) {
+                grid.innerHTML = `<div class="col-span-full p-8 text-center text-slate-400">No notes yet. Click "Add Note" to write something!</div>`;
+                return;
+            }
+            
+            [...appData.notes].reverse().forEach(n => {
+                if(!n.ID) return;
+                const card = document.createElement('div');
+                card.className = `${n.Color || 'bg-white'} rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-64 hover:shadow-md transition group`;
+                card.innerHTML = `
+                    <div class="p-4 border-b border-black/5 flex justify-between items-start shrink-0">
+                        <div class="flex-1 min-w-0 pr-2">
+                            <h3 class="font-bold text-slate-800 truncate">${n.Title || 'Untitled'}</h3>
+                            <p class="text-[10px] text-slate-500 font-medium">${n.Date}</p>
+                        </div>
+                        <div class="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition">
+                            <button onclick="editNote('${n.ID}')" class="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-white rounded transition"><i class="ph ph-pencil-simple text-sm"></i></button>
+                            <button onclick="deleteNote('${n.ID}')" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-white rounded transition"><i class="ph ph-trash text-sm"></i></button>
+                        </div>
+                    </div>
+                    <div class="p-4 flex-1 overflow-hidden relative">
+                        <div class="text-sm text-slate-700 line-clamp-[7] quill-content prose prose-sm prose-slate max-w-none">${n.Content}</div>
+                        <div class="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-${n.Color ? n.Color.replace('bg-','') : 'white'} to-transparent"></div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openNoteModal() {
+            document.getElementById('note-edit-id').value = '';
+            document.getElementById('note-title').value = '';
+            document.getElementById('note-color').value = 'bg-white';
+            quillEditor.root.innerHTML = '';
+            document.getElementById('note-modal-title').textContent = 'Add Note';
+            document.getElementById('btn-save-note').textContent = 'Save Note';
+            document.getElementById('add-note-modal').classList.remove('hidden');
+        }
+
+        async function handleSaveNote() {
+            const btn = document.getElementById('btn-save-note');
+            btn.innerHTML = '<div class="loader" style="width:16px;height:16px;border-width:2px; border-top-color: white;"></div>'; btn.disabled = true;
+
+            const editId = document.getElementById('note-edit-id').value;
+            const updatedData = {
+                'Title': document.getElementById('note-title').value.trim() || 'Untitled Note',
+                'Content': quillEditor.root.innerHTML,
+                'Color': document.getElementById('note-color').value
+            };
+
+            let commitMsg = ''; let backup = JSON.parse(JSON.stringify(appData.notes));
+
+            if (editId) {
+                const idx = appData.notes.findIndex(n => n.ID === editId);
+                if (idx > -1) { appData.notes[idx] = { ...appData.notes[idx], ...updatedData }; commitMsg = `Edit note: ${updatedData.Title}`; }
+            } else {
+                const newNote = { 'ID': 'NOT-' + Date.now(), 'Date': getLocalDateString(), ...updatedData };
+                if(!appData.notes) appData.notes = [];
+                appData.notes.push(newNote); commitMsg = `Add note: ${updatedData.Title}`;
+            }
+
+            try {
+                await updateGitHubFile('notes.csv', appData.notes, commitMsg);
+                renderNotesUI(); closeModal('add-note-modal'); showToast(editId ? 'Note updated!' : 'Note saved!');
+            } catch (err) {
+                console.error(err); appData.notes = backup; showToast(`Error: ${err.message}`, 'error'); 
+            } finally { btn.innerHTML = 'Save Note'; btn.disabled = false; }
+        }
+
+        function editNote(id) {
+            const n = appData.notes.find(n => n.ID === id); if(!n) return;
+            document.getElementById('note-edit-id').value = n.ID;
+            document.getElementById('note-title').value = n.Title;
+            document.getElementById('note-color').value = n.Color || 'bg-white';
+            quillEditor.root.innerHTML = n.Content || '';
+            document.getElementById('note-modal-title').textContent = 'Edit Note';
+            document.getElementById('btn-save-note').innerHTML = 'Update Note';
+            document.getElementById('add-note-modal').classList.remove('hidden');
+        }
+
+        async function deleteNote(id) {
+            if(!confirm("Delete this note?")) return;
+            const idx = appData.notes.findIndex(n => n.ID === id); if(idx === -1) return;
+            toggleLoader(true);
+            const del = appData.notes.splice(idx, 1)[0]; 
+            try {
+                await updateGitHubFile('notes.csv', appData.notes, `Delete note: ${del.Title}`);
+                renderNotesUI(); showToast('Note deleted!');
+            } catch (err) {
+                console.error(err); appData.notes.splice(idx, 0, del); showToast(`Error: ${err.message}`, 'error');
+            } finally { toggleLoader(false); }
+        }
+
+        //        function changeCalendarMonth(delta) {
+            calendarDate.setMonth(calendarDate.getMonth() + delta);
+            renderCalendarUI();
+        }
+
         function prepEventDate(dateStr) {
             document.getElementById('form-add-event').reset();
             document.getElementById('event-edit-id').value = '';
@@ -504,12 +1445,168 @@
             openModal('add-event-modal');
         }
 
+        function renderCalendarUI() {
+            const grid = document.getElementById('cal-grid'); grid.innerHTML = '';
+            
+            const year = calendarDate.getFullYear();
+            const month = calendarDate.getMonth(); // 0-11
+            
+            const firstDay = new Date(year, month, 1).getDay(); // 0-6 (Sun-Sat)
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const daysInPrevMonth = new Date(year, month, 0).getDate();
+            
+            document.getElementById('cal-month-title').textContent = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
+            
+            const todayStr = getLocalDateString();
+            
+            // Build the grid cells
+            const cells = [];
+            
+            // Prev month trailing days
+            for(let i = firstDay - 1; i >= 0; i--) {
+                const d = daysInPrevMonth - i;
+                const m = month === 0 ? 12 : month;
+                const y = month === 0 ? year - 1 : year;
+                cells.push({ y, m, d, isCur: false });
+            }
+            // Current month days
+            for(let i = 1; i <= daysInMonth; i++) {
+                cells.push({ y: year, m: month + 1, d: i, isCur: true });
+            }
+            // Next month leading days to fill 6 rows (42 cells)
+            const remaining = 42 - cells.length;
+            for(let i = 1; i <= remaining; i++) {
+                const m = month === 11 ? 1 : month + 2;
+                const y = month === 11 ? year + 1 : year;
+                cells.push({ y, m, d: i, isCur: false });
+            }
+
+            cells.forEach(cell => {
+                const cellDateStr = `${cell.y}-${String(cell.m).padStart(2,'0')}-${String(cell.d).padStart(2,'0')}`;
+                const isToday = cellDateStr === todayStr;
+                
+                const cDiv = document.createElement('div');
+                cDiv.className = `cal-cell bg-white relative cursor-pointer hover:bg-slate-50 transition flex flex-col ${cell.isCur ? '' : 'other-month'} ${isToday ? 'today' : ''} ${selectedDayStr === cellDateStr ? 'ring-2 ring-inset ring-blue-500' : ''}`;
+                cDiv.onclick = () => { selectedDayStr = cellDateStr; renderCalendarUI(); }; // Re-render to highlight selection and show list
+                
+                const numSpan = document.createElement('span');
+                numSpan.className = `inline-flex items-center justify-center w-6 h-6 text-xs font-semibold rounded-full mb-1 ${isToday ? 'bg-blue-600 text-white' : (cell.isCur ? 'text-slate-700' : 'text-slate-400')}`;
+                numSpan.textContent = cell.d;
+                cDiv.appendChild(numSpan);
+
+                const dotsWrap = document.createElement('div');
+                dotsWrap.className = 'flex flex-wrap gap-1 mt-auto';
+
+                // Look for Events and Tasks matching this cellDateStr
+                let dayItems = getItemsForDate(cell.y, cell.m, cell.d);
+                
+                dayItems.forEach(item => {
+                    const dot = document.createElement('div');
+                    dot.className = `w-1.5 h-1.5 rounded-full flex-shrink-0 ${item.dotColor}`;
+                    dot.title = item.title;
+                    dotsWrap.appendChild(dot);
+                });
+
+                cDiv.appendChild(dotsWrap);
+                grid.appendChild(cDiv);
+            });
+
+            // Update Details Panel
+            if(!selectedDayStr) selectedDayStr = todayStr;
+            const [sy, sm, sd] = selectedDayStr.split('-').map(Number);
+            
+            const detailTitle = document.getElementById('cal-selected-date-title');
+            const dObj = new Date(sy, sm-1, sd);
+            detailTitle.innerHTML = `${dObj.toLocaleString('default', { weekday: 'short' })}, ${dObj.toLocaleString('default', { month: 'short' })} ${sd} <button onclick="prepEventDate('${selectedDayStr}')" class="ml-2 text-rose-500 hover:bg-rose-50 px-2 py-0.5 rounded text-xs font-semibold transition border border-rose-200">+ Add</button>`;
+            
+            const detailList = document.getElementById('cal-day-details');
+            detailList.innerHTML = '';
+            
+            const selectedItems = getItemsForDate(sy, sm, sd);
+            
+            if(selectedItems.length === 0) {
+                detailList.innerHTML = '<p class="text-xs text-slate-400 text-center mt-4">Nothing scheduled.</p>';
+            } else {
+                selectedItems.forEach(item => {
+                    const iCard = document.createElement('div');
+                    iCard.className = `p-2 rounded-lg border flex gap-2 items-start bg-white shadow-sm ${item.borderColor}`;
+                    
+                    let actions = '';
+                    if(item.source === 'event') {
+                        actions = `<div class="flex gap-1 ml-auto shrink-0">
+                            <button onclick="editEvent('${item.id}')" class="text-slate-400 hover:text-blue-600"><i class="ph ph-pencil-simple"></i></button>
+                            <button onclick="deleteEvent('${item.id}')" class="text-slate-400 hover:text-red-600"><i class="ph ph-trash"></i></button>
+                        </div>`;
+                    } else {
+                         actions = `<div class="ml-auto shrink-0 text-[10px] uppercase font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">Task</div>`;
+                    }
+
+                    iCard.innerHTML = `
+                        <div class="w-6 h-6 rounded flex items-center justify-center shrink-0 ${item.iconBg}"><i class="ph ${item.icon} text-sm"></i></div>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-xs font-bold text-slate-800 truncate leading-tight">${item.title}</p>
+                            ${item.desc ? `<p class="text-[10px] text-slate-500 mt-0.5 truncate">${item.desc}</p>` : ''}
+                        </div>
+                        ${actions}
+                    `;
+                    detailList.appendChild(iCard);
+                });
+            }
+        }
+
+        // Engine to calculate recurring events and map tasks for a specific calendar grid cell
+        function getItemsForDate(y, m, d) {
+            const items = [];
+            
+            // Events
+            if (appData.events) {
+                appData.events.forEach(e => {
+                    if(!e.ID || !e.Date) return;
+                    const [ey, em, ed] = e.Date.split('-').map(Number);
+                    
+                    const eventStart = new Date(ey, em-1, ed);
+                    const checkDate = new Date(y, m-1, d);
+                    
+                    if (checkDate >= eventStart) {
+                        let occurs = false;
+                        if (!e.Repeat || e.Repeat === 'Never') { occurs = (y === ey && m === em && d === ed); } 
+                        else if (e.Repeat === 'Daily') { occurs = true; } 
+                        else if (e.Repeat === 'Monthly') { occurs = (d === ed); } 
+                        else if (e.Repeat === 'Yearly') { occurs = (m === em && d === ed); }
+
+                        if(occurs) {
+                            let dCol = 'bg-blue-500'; let bCol = 'border-blue-100'; let iBg = 'bg-blue-100 text-blue-600'; let ic = 'ph-calendar-star';
+                            if(e.Type === 'Birthday') { dCol = 'bg-rose-500'; bCol = 'border-rose-100'; iBg = 'bg-rose-100 text-rose-600'; ic = 'ph-cake'; }
+                            if(e.Type === 'Anniversary') { dCol = 'bg-purple-500'; bCol = 'border-purple-100'; iBg = 'bg-purple-100 text-purple-600'; ic = 'ph-heart'; }
+                            
+                            items.push({ source: 'event', id: e.ID, title: e.Title, desc: e.Description, dotColor: dCol, borderColor: bCol, iconBg: iBg, icon: ic });
+                        }
+                    }
+                });
+            }
+
+            // Tasks mapping
+            if(appData.tasks) {
+                const targetStr = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                appData.tasks.forEach(t => {
+                    if(!t.ID) return;
+                    // Issue dot
+                    if(t['Issue Date'] === targetStr) {
+                        items.push({ source: 'task', id: t.ID, title: `Added: ${t['Task Name']}`, desc: 'Task opened', dotColor: 'bg-amber-500', borderColor: 'border-amber-100', iconBg: 'bg-amber-100 text-amber-600', icon: 'ph-clipboard-text' });
+                    }
+                    // Complete dot
+                    if(t.Status === 'Completed' && t['Completed Date'] === targetStr) {
+                        items.push({ source: 'task', id: t.ID, title: `Done: ${t['Task Name']}`, desc: 'Task finished', dotColor: 'bg-emerald-500', borderColor: 'border-emerald-100', iconBg: 'bg-emerald-100 text-emerald-600', icon: 'ph-check-circle' });
+                    }
+                });
+            }
+            return items;
+        }
+
         async function handleSaveEvent(e) {
             e.preventDefault();
-            const btn = document.getElementById('btn-save-event');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<div class="loader" style="width:16px;height:16px;border-width:2px; border-top-color: white;"></div> Saving...';
-            btn.disabled = true;
+            const btn = document.getElementById('btn-save-event'); const orig = btn.innerHTML;
+            btn.innerHTML = '<div class="loader" style="width:16px;height:16px;border-width:2px; border-top-color: white;"></div> Saving...'; btn.disabled = true;
 
             const editId = document.getElementById('event-edit-id').value;
             const updatedData = {
@@ -521,43 +1618,32 @@
                 'Reminder': document.getElementById('event-reminder').value
             };
 
-            let commitMsg = '';
-            let backupEvents = JSON.parse(JSON.stringify(appData.events));
+            let commitMsg = ''; let backup = JSON.parse(JSON.stringify(appData.events));
 
             if (editId) {
-                const index = appData.events.findIndex(ev => ev.ID === editId);
-                if (index > -1) {
-                    appData.events[index] = { ...appData.events[index], ...updatedData };
-                    commitMsg = `Edit event: ${updatedData.Title}`;
-                }
+                const idx = appData.events.findIndex(ev => ev.ID === editId);
+                if (idx > -1) { appData.events[idx] = { ...appData.events[idx], ...updatedData }; commitMsg = `Edit event: ${updatedData.Title}`; }
             } else {
                 const newEvent = { 'ID': 'EVT-' + Date.now(), ...updatedData };
-                appData.events.push(newEvent);
-                commitMsg = `Add event: ${updatedData.Title}`;
+                if(!appData.events) appData.events = [];
+                appData.events.push(newEvent); commitMsg = `Add event: ${updatedData.Title}`;
             }
 
+            // Sync calendar view to event date
             const d = new Date(updatedData.Date);
             calendarDate = new Date(d.getFullYear(), d.getMonth(), 1);
+            selectedDayStr = updatedData.Date;
 
             try {
                 await updateGitHubFile('events.csv', appData.events, commitMsg);
-                renderCalendarUI();
-                checkNotifications();
-                closeModal('add-event-modal');
-                showToast(editId ? 'Event updated!' : 'Event added!');
-            } catch (error) {
-                console.error(error);
-                appData.events = backupEvents;
-                showToast(`Error: ${error.message}`, 'error'); 
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
+                renderCalendarUI(); checkNotifications(); closeModal('add-event-modal'); showToast(editId ? 'Event updated!' : 'Event added!');
+            } catch (err) {
+                console.error(err); appData.events = backup; showToast(`Error: ${err.message}`, 'error'); 
+            } finally { btn.innerHTML = orig; btn.disabled = false; }
         }
 
         function editEvent(id) {
-            const ev = appData.events.find(e => e.ID === id);
-            if(!ev) return;
+            const ev = appData.events.find(e => e.ID === id); if(!ev) return;
             document.getElementById('event-edit-id').value = ev.ID;
             document.getElementById('event-date').value = ev.Date;
             document.getElementById('event-type').value = ev.Type;
@@ -571,11 +1657,19 @@
         }
 
         async function deleteEvent(id) {
-<!-- ... existing code ... -->
+            if(!confirm("Delete this event?")) return;
+            const idx = appData.events.findIndex(e => e.ID === id); if(idx === -1) return;
+            toggleLoader(true);
+            const del = appData.events.splice(idx, 1)[0]; 
             try {
-                await updateGitHubFile('events.csv', appData.events, `Delete event: ${deleted.Title}`);
-                renderCalendarUI();
-                checkNotifications();
-                showToast('Event deleted successfully!');
-            } catch (error) {
-<!-- ... existing code ... -->
+                await updateGitHubFile('events.csv', appData.events, `Delete event: ${del.Title}`);
+                renderCalendarUI(); checkNotifications(); showToast('Event deleted!');
+            } catch (err) {
+                console.error(err); appData.events.splice(idx, 0, del); showToast(`Error: ${err.message}`, 'error');
+            } finally { toggleLoader(false); }
+        }
+
+        window.onload = initAuth;
+    </script>
+</body>
+</html>
