@@ -7,36 +7,31 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        /* Custom scrollbar for a cleaner look */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        /* Toast notification styling */
         #toast-container { transition: opacity 0.3s ease; }
         
-        /* Active Tab Styling for Sidebar/Bottom Nav */
         .nav-btn.active {
-            background-color: #2563eb; /* blue-600 */
+            background-color: #2563eb;
             color: #ffffff;
         }
         .nav-btn:not(.active) {
-            color: #94a3b8; /* slate-400 */
+            color: #94a3b8;
         }
         .nav-btn:not(.active):hover {
-            background-color: #1e293b; /* slate-800 */
-            color: #e2e8f0; /* slate-200 */
+            background-color: #1e293b;
+            color: #e2e8f0;
         }
         
-        /* Month Filter Active Styling */
         .month-btn.active {
             background-color: #1e293b;
             color: #ffffff;
             border-color: #1e293b;
         }
         
-        /* Loader */
         .loader {
             border: 3px solid #f3f3f3;
             border-top: 3px solid #2563eb;
@@ -92,9 +87,11 @@
         </div>
     </div>
 
-    <div id="app-view" class="w-full h-screen flex flex-col md:flex-row hidden">
+    <!-- MAIN APP SCREEN -->
+    <div id="app-view" class="w-full h-[100dvh] flex flex-col md:flex-row hidden overflow-hidden">
         
-        <nav class="bg-slate-900 text-white md:w-64 w-full flex-shrink-0 md:flex flex-col z-20 order-last md:order-first shadow-xl md:shadow-none">
+        <!-- Sidebar (Desktop) / Bottom Nav (Mobile) -->
+        <nav class="bg-slate-900 text-white md:w-64 w-full flex-shrink-0 md:flex flex-col z-20 order-last md:order-first shadow-[0_-4px_15px_rgba(0,0,0,0.15)] md:shadow-none">
             <div class="p-6 hidden md:block border-b border-slate-800">
                 <h2 class="text-2xl font-bold text-white flex items-center gap-2">
                     <i class="ph ph-squares-four text-blue-500"></i>
@@ -125,7 +122,9 @@
             </div>
         </nav>
 
-        <main class="flex-1 bg-slate-50 overflow-y-auto w-full relative pb-20 md:pb-0">
+        <!-- Main Content Area -->
+        <main class="flex-1 min-h-0 bg-slate-50 overflow-y-auto w-full relative pb-6 md:pb-0">
+            <!-- Mobile Header -->
             <header class="md:hidden bg-white shadow-sm px-4 py-4 flex justify-between items-center sticky top-0 z-10">
                 <h1 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                     <i class="ph ph-squares-four text-blue-600"></i> My Dashboard
@@ -142,6 +141,7 @@
 
             <div class="p-4 md:p-8 max-w-6xl mx-auto">
                 
+                <!-- OVERVIEW TAB -->
                 <div id="tab-overview" class="tab-content block">
                     <div class="flex justify-between items-center mb-6 hidden md:flex">
                         <h2 class="text-2xl font-bold text-slate-800">Overview</h2>
@@ -213,6 +213,7 @@
                     </div>
                 </div>
 
+                <!-- TASKS TAB -->
                 <div id="tab-tasks" class="tab-content hidden">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-2xl font-bold text-slate-800 hidden md:block">Task Manager</h2>
@@ -223,26 +224,29 @@
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                        <!-- Pending Tasks -->
                         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                             <div class="bg-slate-50 px-5 py-4 border-b border-slate-200 flex justify-between items-center">
                                 <h3 class="font-bold text-slate-700">Pending</h3>
                                 <span id="count-pending" class="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold">0</span>
                             </div>
                             <ul id="list-pending-tasks" class="divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
-                                </ul>
+                            </ul>
                         </div>
 
+                        <!-- Completed Tasks -->
                         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden opacity-80">
                             <div class="bg-slate-50 px-5 py-4 border-b border-slate-200 flex justify-between items-center">
                                 <h3 class="font-bold text-slate-700">Completed</h3>
                                 <span id="count-completed" class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">0</span>
                             </div>
                             <ul id="list-completed-tasks" class="divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
-                                </ul>
+                            </ul>
                         </div>
                     </div>
                 </div>
 
+                <!-- CASHBOOK TAB -->
                 <div id="tab-cashbook" class="tab-content hidden">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-2xl font-bold text-slate-800 hidden md:block">Cashbook</h2>
@@ -253,10 +257,10 @@
                     </div>
 
                     <div id="person-balances-container" class="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4 hidden">
-                        </div>
+                    </div>
 
                     <div class="mb-4 flex gap-2 overflow-x-auto pb-2 custom-scrollbar" id="cashbook-month-filters">
-                        </div>
+                    </div>
 
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto">
                         <table class="w-full text-left border-collapse min-w-[600px]">
@@ -272,7 +276,7 @@
                                 </tr>
                             </thead>
                             <tbody id="list-cashbook-entries" class="divide-y divide-slate-100 text-sm">
-                                </tbody>
+                            </tbody>
                         </table>
                         
                         <div class="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-6 text-sm">
@@ -286,6 +290,7 @@
         </main>
     </div>
 
+    <!-- MODALS -->
     <div id="add-task-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all">
             <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
@@ -425,20 +430,10 @@
     </div>
 
     <script>
-        /* ==========================================================================
-           GLOBAL STATE
-           ========================================================================== */
         let githubCreds = { pat: '', user: '', repo: '' };
-        let appData = {
-            tasks: [],
-            cashbook: []
-        };
-        
-        let currentCashbookMonth = ''; // Track which month filter is active
+        let appData = { tasks: [], cashbook: [] };
+        let currentCashbookMonth = '';
 
-        /* ==========================================================================
-           UTILITIES (Timezone Safe Local Timestamps)
-           ========================================================================== */
         function getLocalDateString() {
             const now = new Date();
             return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -448,9 +443,6 @@
             return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         }
 
-        /* ==========================================================================
-           UI & NAVIGATION UTILITIES
-           ========================================================================== */
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const msgEl = document.getElementById('toast-message');
@@ -477,12 +469,10 @@
             
             if(modalId === 'add-cashbook-modal') {
                 document.getElementById('form-add-cashbook').reset();
-                // Auto-fill timezone safe current date & time
                 document.getElementById('cb-date').value = getLocalDateString();
                 if (document.getElementById('cb-time')) {
                     document.getElementById('cb-time').value = getLocalTimeString();
                 }
-
                 document.getElementById('cb-edit-id').value = '';
                 document.getElementById('cb-modal-title').textContent = 'Add Cashbook Entry';
                 document.getElementById('btn-save-cashbook').innerHTML = 'Save Entry';
@@ -490,7 +480,6 @@
 
             if(modalId === 'add-task-modal') {
                 document.getElementById('form-add-task').reset();
-                // Auto-fill timezone safe current date & time and make them visible as readonly
                 document.getElementById('task-issue-date').value = getLocalDateString();
                 document.getElementById('task-issue-time').value = getLocalTimeString();
             }
@@ -531,15 +520,12 @@
             }
         }
 
-        /* ==========================================================================
-           AUTHENTICATION LOGIC
-           ========================================================================== */
         function initAuth() {
             const saved = localStorage.getItem('dash_creds');
             if (saved) {
                 githubCreds = JSON.parse(saved);
                 toggleAppView(true);
-                loadAllData(); // Auto load data when logged in
+                loadAllData();
             } else {
                 toggleAppView(false);
             }
@@ -568,9 +554,6 @@
             showToast('Disconnected successfully', 'info');
         }
 
-        /* ==========================================================================
-           DATA PARSERS & ENCODERS
-           ========================================================================== */
         function textToBase64(text) { return btoa(unescape(encodeURIComponent(text))); }
         function base64ToText(base64) { return decodeURIComponent(escape(atob(base64))); }
 
@@ -600,8 +583,6 @@
 
         function jsonToCsv(jsonArray) {
             if (!jsonArray || !jsonArray.length) return '';
-            
-            // Gather all unique keys from all objects to ensure no data is lost
             const headerSet = new Set();
             jsonArray.forEach(row => Object.keys(row).forEach(k => headerSet.add(k)));
             const headers = Array.from(headerSet);
@@ -621,15 +602,10 @@
             return csv;
         }
 
-        /* ==========================================================================
-           GITHUB API WRAPPER
-           ========================================================================== */
         const fileSHAs = { 'tasks.csv': null, 'cashbook.csv': null };
 
         async function fetchGitHubFile(filename) {
             const { pat, user, repo } = githubCreds;
-            
-            // CACHE-BUSTER: Append a unique timestamp to force the browser to fetch the latest file
             const timestamp = new Date().getTime();
             const url = `https://api.github.com/repos/${user}/${repo}/contents/${filename}?t=${timestamp}`;
 
@@ -638,7 +614,7 @@
                     'Authorization': `token ${pat}`, 
                     'Accept': 'application/vnd.github.v3+json'
                 },
-                cache: 'no-store' // This tells the browser safely not to cache the result
+                cache: 'no-store'
             });
 
             if (!response.ok) {
@@ -673,45 +649,6 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(bodyPayload)
-            });
-
-            if (!response.ok) {
-                const errDetails = await response.json().catch(() => ({}));
-                throw new Error(errDetails.message || `Failed to update ${filename}`);
-            }
-            
-            const data = await response.json();
-            fileSHAs[filename] = data.content.sha; // Update with the new hash so subsequent updates work!
-            return data;
-        }
-
-        /* ==========================================================================
-           MAIN APP LOGIC (LOAD & RENDER)
-           ========================================================================== */
-        async function loadAllData() {
-            toggleLoader(true);
-            try {
-                // We let errors throw naturally now so they don't silently fail!
-                const [tasks, cashbook] = await Promise.all([
-                    fetchGitHubFile('tasks.csv'), 
-                    fetchGitHubFile('cashbook.csv')
-                ]);
-                
-                appData.tasks = tasks;
-                appData.cashbook = cashbook;
-                
-                renderTasksUI();
-                renderCashbookUI(); 
-                
-                showToast('Data Synced Successfully', 'success');
-            } catch (error) {
-                console.error(error);
-                showToast(`Sync Error: ${error.message}`, 'error');
-            } finally {
-                toggleLoader(false);
-            }
-        }
-
         /* ==========================================================================
            TASK MODULE LOGIC
            ========================================================================== */
@@ -722,19 +659,52 @@
             pendingList.innerHTML = '';
             completedList.innerHTML = '';
             
-            let pendingCount = 0;
-            let completedCount = 0;
+            let pendingTasks = [];
+            let completedTasks = [];
 
-            const sortedTasks = [...appData.tasks].reverse();
-
-            sortedTasks.forEach(task => {
+            // 1. Separate pending and completed tasks
+            appData.tasks.forEach(task => {
                 if(!task.ID) return;
+                if(task.Status === 'Completed') {
+                    completedTasks.push(task);
+                } else {
+                    pendingTasks.push(task);
+                }
+            });
 
-                const isCompleted = task.Status === 'Completed';
+            // 2. Sort Pending Tasks by Priority (High > Medium > Low) and then by Issue Date
+            const priorityWeight = { 'High': 3, 'Medium': 2, 'Low': 1 };
+            pendingTasks.sort((a, b) => {
+                const weightDiff = (priorityWeight[b.Priority] || 0) - (priorityWeight[a.Priority] || 0);
+                if (weightDiff !== 0) return weightDiff; // If priorities differ, sort by priority
                 
+                // If priorities are the same, tie-break by newest first
+                const timeA = new Date(`${a['Issue Date'] || '1970-01-01'}T${a['Issue Time'] || '00:00'}:00`).getTime();
+                const timeB = new Date(`${b['Issue Date'] || '1970-01-01'}T${b['Issue Time'] || '00:00'}:00`).getTime();
+                return timeB - timeA;
+            });
+
+            // 3. Sort Completed Tasks by Completed Date & Time (Newest completed first)
+            completedTasks.sort((a, b) => {
+                const timeA = new Date(`${a['Completed Date'] || '1970-01-01'}T${a['Completed Time'] || '00:00'}:00`).getTime();
+                const timeB = new Date(`${b['Completed Date'] || '1970-01-01'}T${b['Completed Time'] || '00:00'}:00`).getTime();
+                return timeB - timeA;
+            });
+
+            // 4. Render Logic
+            const renderTaskItem = (task, isCompleted, listElement) => {
                 let prioColor = 'text-slate-500 bg-slate-100';
                 if(task.Priority === 'High') prioColor = 'text-red-700 bg-red-100';
                 if(task.Priority === 'Medium') prioColor = 'text-blue-700 bg-blue-100';
+
+                // Format Completed Time nicely
+                let timeDisplay = '';
+                if (task['Completed Time']) {
+                    const [h, m] = task['Completed Time'].split(':');
+                    const d = new Date();
+                    d.setHours(h, m);
+                    timeDisplay = ' at ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
 
                 const li = document.createElement('li');
                 li.className = `p-4 hover:bg-slate-50 transition group flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer`;
@@ -747,7 +717,7 @@
                         </div>
                         <p class="text-xs text-slate-500 truncate">${task.Description || 'No description'}</p>
                         ${task['Due Date'] && !isCompleted ? `<p class="text-xs text-red-500 mt-1"><i class="ph ph-clock mr-1"></i>Due: ${task['Due Date']}</p>` : ''}
-                        ${isCompleted ? `<p class="text-xs text-green-600 mt-1"><i class="ph ph-check-circle mr-1"></i>Done: ${task['Completed Date']}</p>` : ''}
+                        ${isCompleted ? `<p class="text-xs text-green-600 mt-1"><i class="ph ph-check-circle mr-1"></i>Done: ${task['Completed Date']}${timeDisplay}</p>` : ''}
                     </div>
                     
                     <div class="shrink-0 flex items-center justify-center gap-2">
@@ -763,15 +733,14 @@
                         </button>
                     </div>
                 `;
+                listElement.appendChild(li);
+            };
 
-                if (isCompleted) {
-                    completedList.appendChild(li);
-                    completedCount++;
-                } else {
-                    pendingList.appendChild(li);
-                    pendingCount++;
-                }
-            });
+            pendingTasks.forEach(task => renderTaskItem(task, false, pendingList));
+            completedTasks.forEach(task => renderTaskItem(task, true, completedList));
+
+            const pendingCount = pendingTasks.length;
+            const completedCount = completedTasks.length;
 
             document.getElementById('count-pending').textContent = pendingCount;
             document.getElementById('count-completed').textContent = completedCount;
@@ -862,17 +831,14 @@
             if(taskIndex === -1) return;
 
             toggleLoader(true);
-            // Remove the task from the local array
             const deletedTask = appData.tasks.splice(taskIndex, 1)[0]; 
 
             try {
-                // Update GitHub file without the deleted task
                 await updateGitHubFile('tasks.csv', appData.tasks, `Delete task: ${deletedTask['Task Name']}`);
                 renderTasksUI();
                 showToast('Task deleted successfully!');
             } catch (error) {
                 console.error(error);
-                // Rollback if GitHub update fails
                 appData.tasks.splice(taskIndex, 0, deletedTask); 
                 showToast(`Error: ${error.message}`, 'error');
             } finally {
@@ -892,7 +858,6 @@
             document.getElementById('detail-desc').textContent = task.Description || 'No description provided.';
             document.getElementById('detail-due').textContent = task['Due Date'] || 'None';
             
-            // Format Issue display
             let issueDisplay = task['Issue Date'] || '-';
             if(task['Issue Time']) issueDisplay += ` at ${task['Issue Time']}`;
             document.getElementById('detail-issue').textContent = issueDisplay;
@@ -914,27 +879,21 @@
             openModal('detail-task-modal');
         }
 
-        /* ==========================================================================
-           CASHBOOK MODULE LOGIC
-           ========================================================================== */
         function renderCashbookUI() {
             let cashBal = 0;
             let onlineBal = 0;
-            const monthsMap = new Map(); // Store entries grouped by month
-            const personLedger = {}; // Store net balance per person
+            const monthsMap = new Map();
+            const personLedger = {};
 
-            // Parse and group entries
             appData.cashbook.forEach(entry => {
-                if(!entry.ID || !entry.Amount) return; // Skip empty rows
+                if(!entry.ID || !entry.Amount) return;
 
                 const amt = parseFloat(entry.Amount) || 0;
                 
-                // Calculate Totals and Ledger logic for Overview Tab
                 if(entry['Transaction Type'] === 'In') {
                     if(entry['Payment Mode'] === 'Cash') cashBal += amt;
                     else onlineBal += amt;
 
-                    // If Money IN with a person, it means I received money from them. Thus I will give them something (negative balance relative to them)
                     if(entry.Person && entry.Person.trim() !== '') {
                         const p = entry.Person.trim();
                         personLedger[p] = (personLedger[p] || 0) - amt;
@@ -943,14 +902,12 @@
                     if(entry['Payment Mode'] === 'Cash') cashBal -= amt;
                     else onlineBal -= amt;
 
-                    // If Money OUT to a person, it means I gave them money. Thus I will get money back from them (positive balance relative to them)
                     if(entry.Person && entry.Person.trim() !== '') {
                         const p = entry.Person.trim();
                         personLedger[p] = (personLedger[p] || 0) + amt;
                     }
                 }
 
-                // Group by Month (Timezone Safe Extract: YYYY-MM)
                 if(entry.Date) {
                     const dateParts = entry.Date.split('-');
                     if (dateParts.length >= 2) {
@@ -961,7 +918,6 @@
                 }
             });
 
-            // Calculate Total "Will Get" and "Will Give" across all persons
             let totalWillGet = 0;
             let totalWillGive = 0;
             
@@ -970,16 +926,15 @@
             let hasPersons = false;
 
             for (const [person, balance] of Object.entries(personLedger)) {
-                if (balance === 0) continue; // Skip settled balances
+                if (balance === 0) continue;
                 hasPersons = true;
                 
                 if (balance > 0) {
-                    totalWillGet += balance; // I will get this much back
+                    totalWillGet += balance;
                 } else {
-                    totalWillGive += Math.abs(balance); // I have to give this much
+                    totalWillGive += Math.abs(balance);
                 }
 
-                // Create individual person card in Cashbook tab
                 const pCard = document.createElement('div');
                 pCard.className = 'bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center shadow-sm';
                 pCard.innerHTML = `
@@ -998,17 +953,15 @@
                 personContainer.classList.add('hidden');
             }
 
-            // Update Overview Metrics
             document.getElementById('metric-cash-balance').textContent = cashBal.toLocaleString('en-IN');
             document.getElementById('metric-online-balance').textContent = onlineBal.toLocaleString('en-IN');
             document.getElementById('metric-will-get').textContent = totalWillGet.toLocaleString('en-IN');
             document.getElementById('metric-will-give').textContent = totalWillGive.toLocaleString('en-IN');
 
-            // Setup Month Filters UI
             const filterContainer = document.getElementById('cashbook-month-filters');
             filterContainer.innerHTML = '';
             
-            const sortedMonths = Array.from(monthsMap.keys()).sort().reverse(); // Newest first
+            const sortedMonths = Array.from(monthsMap.keys()).sort().reverse();
 
             if(sortedMonths.length === 0) {
                 document.getElementById('list-cashbook-entries').innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">No cashbook entries yet. Click "Add Entry" to begin!</td></tr>`;
@@ -1017,14 +970,11 @@
                 return;
             }
 
-            // Ensure a valid current month is selected
             if(!currentCashbookMonth || !monthsMap.has(currentCashbookMonth)) {
                 currentCashbookMonth = sortedMonths[0];
             }
 
-            // Create Filter Pills
             sortedMonths.forEach(monthKey => {
-                // Format "2026-07" to "July 2026"
                 const [yyyy, mm] = monthKey.split('-');
                 const monthName = new Date(yyyy, parseInt(mm)-1).toLocaleString('default', { month: 'short', year: 'numeric' });
                 
@@ -1034,20 +984,18 @@
                 btn.textContent = monthName;
                 btn.onclick = () => {
                     currentCashbookMonth = monthKey;
-                    renderCashbookUI(); // Re-render to update table
+                    renderCashbookUI();
                 };
                 filterContainer.appendChild(btn);
             });
 
-            // Render Table for selected month (Sorted by Date AND Time)
             const tbody = document.getElementById('list-cashbook-entries');
             tbody.innerHTML = '';
             
             const entriesToDisplay = monthsMap.get(currentCashbookMonth).sort((a,b) => {
-                // Combine Date and Time strings (fallback to 00:00 if time is missing)
                 const dateTimeA = new Date(`${a.Date}T${a.Time || '00:00'}:00`);
                 const dateTimeB = new Date(`${b.Date}T${b.Time || '00:00'}:00`);
-                return dateTimeB - dateTimeA; // Newest first
+                return dateTimeB - dateTimeA;
             });
 
             entriesToDisplay.forEach(entry => {
@@ -1090,7 +1038,6 @@
                 tbody.appendChild(tr);
             });
 
-            // Update Table Footers with total balances
             document.getElementById('cb-total-cash').textContent = `₹${cashBal.toLocaleString('en-IN')}`;
             document.getElementById('cb-total-online').textContent = `₹${onlineBal.toLocaleString('en-IN')}`;
         }
@@ -1113,24 +1060,21 @@
                 'Description': document.getElementById('cb-desc').value.trim()
             };
 
-            // Switch view to the month of the newly added/edited item (Timezone Safe)
             const dateParts = updatedEntryData.Date.split('-');
             if (dateParts.length >= 2) {
                 currentCashbookMonth = `${dateParts[0]}-${dateParts[1]}`;
             }
 
             let commitMsg = '';
-            let backupCashbook = JSON.parse(JSON.stringify(appData.cashbook)); // Deep copy for safe rollback
+            let backupCashbook = JSON.parse(JSON.stringify(appData.cashbook));
 
             if (editId) {
-                // Edit existing entry
                 const index = appData.cashbook.findIndex(e => e.ID === editId);
                 if (index > -1) {
                     appData.cashbook[index] = { ...appData.cashbook[index], ...updatedEntryData };
                     commitMsg = `Edit cashbook entry: ₹${updatedEntryData.Amount}`;
                 }
             } else {
-                // Add new entry
                 const newEntry = {
                     'ID': 'CB-' + Date.now(),
                     ...updatedEntryData
@@ -1146,7 +1090,7 @@
                 showToast(editId ? 'Entry updated successfully!' : 'Entry added successfully!');
             } catch (error) {
                 console.error(error);
-                appData.cashbook = backupCashbook; // Rollback
+                appData.cashbook = backupCashbook;
                 showToast(`Error: ${error.message}`, 'error'); 
             } finally {
                 btn.innerHTML = originalBtnText.includes('Update') ? 'Update Entry' : 'Save Entry';
@@ -1158,7 +1102,6 @@
             const entry = appData.cashbook.find(e => e.ID === entryId);
             if(!entry) return;
 
-            // Populate form fields
             document.getElementById('cb-edit-id').value = entry.ID;
             document.getElementById('cb-type').value = entry['Transaction Type'];
             document.getElementById('cb-amount').value = entry.Amount;
@@ -1168,7 +1111,6 @@
             document.getElementById('cb-desc').value = entry.Description;
             document.getElementById('cb-person').value = entry.Person || '';
 
-            // Update modal UI for editing
             document.getElementById('cb-modal-title').textContent = 'Edit Cashbook Entry';
             document.getElementById('btn-save-cashbook').innerHTML = 'Update Entry';
             
@@ -1182,17 +1124,14 @@
             if(entryIndex === -1) return;
 
             toggleLoader(true);
-            // Remove the entry from the local array
             const deletedEntry = appData.cashbook.splice(entryIndex, 1)[0]; 
 
             try {
-                // Update GitHub file without the deleted entry
                 await updateGitHubFile('cashbook.csv', appData.cashbook, `Delete cashbook entry: ₹${deletedEntry.Amount}`);
                 renderCashbookUI();
                 showToast('Entry deleted successfully!');
             } catch (error) {
                 console.error(error);
-                // Rollback if GitHub update fails
                 appData.cashbook.splice(entryIndex, 0, deletedEntry); 
                 showToast(`Error: ${error.message}`, 'error');
             } finally {
@@ -1200,7 +1139,6 @@
             }
         }
 
-        // Initialize App on Load
         window.onload = initAuth;
     </script>
 </body>
