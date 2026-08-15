@@ -289,6 +289,25 @@
                         </button>
                     </div>
 
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                            <p class="text-xs text-slate-500 font-semibold mb-1 uppercase tracking-wider">Total Cash</p>
+                            <p class="text-xl md:text-2xl font-bold text-slate-800" id="cb-total-cash">₹0</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                            <p class="text-xs text-slate-500 font-semibold mb-1 uppercase tracking-wider">Total Online</p>
+                            <p class="text-xl md:text-2xl font-bold text-slate-800" id="cb-total-online">₹0</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                            <p class="text-xs text-slate-500 font-semibold mb-1 uppercase tracking-wider"><span id="cb-month-label-in">Month</span> In</p>
+                            <p class="text-xl md:text-2xl font-bold text-green-600" id="cb-month-in">₹0</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                            <p class="text-xs text-slate-500 font-semibold mb-1 uppercase tracking-wider"><span id="cb-month-label-out">Month</span> Out</p>
+                            <p class="text-xl md:text-2xl font-bold text-red-600" id="cb-month-out">₹0</p>
+                        </div>
+                    </div>
+
                     <div id="person-balances-container" class="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4 hidden"></div>
                     <div class="mb-4 flex gap-2 overflow-x-auto pb-2 custom-scrollbar" id="cashbook-month-filters"></div>
 
@@ -307,11 +326,6 @@
                             </thead>
                             <tbody id="list-cashbook-entries" class="divide-y divide-slate-50 text-sm"></tbody>
                         </table>
-                        
-                        <div class="bg-slate-50 border-t border-slate-100 p-4 flex justify-end gap-6 text-sm">
-                            <div class="font-medium text-slate-600">Total Cash: <span id="cb-total-cash" class="text-slate-800 font-bold ml-1">₹0</span></div>
-                            <div class="font-medium text-slate-600">Total Online: <span id="cb-total-online" class="text-slate-800 font-bold ml-1">₹0</span></div>
-                        </div>
                     </div>
                 </div>
 
@@ -579,6 +593,10 @@
                         <option value="Monthly">Monthly</option>
                         <option value="Yearly">Yearly</option>
                     </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Description (Optional)</label>
+                    <textarea id="event-desc" rows="2" placeholder="Additional details..." class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none custom-scrollbar"></textarea>
                 </div>
                 <div class="pt-4 flex justify-end gap-3">
                     <button type="button" onclick="closeModal('add-event-modal')" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition">Cancel</button>
@@ -1446,6 +1464,7 @@
 
                     const niceDate = new Date(e.displayDateStr).toLocaleString('default', { month: 'short', day: 'numeric' });
                     const repeatBadge = (e.Repeat && e.Repeat !== 'Never') ? `<span class="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded text-[10px] ml-1">${e.Repeat}</span>` : '';
+                    const descHtml = e.Description ? `<p class="text-xs text-slate-500 mt-1 line-clamp-2">${e.Description}</p>` : '';
 
                     // Hide edit/delete actions for dynamically injected task events
                     const actionButtons = e.isTaskEvent ? '' : `
@@ -1454,13 +1473,14 @@
                     `;
 
                     eventsList.innerHTML += `
-                        <div class="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl hover:shadow-sm transition group">
+                        <div class="flex items-start gap-3 p-3 bg-white border border-slate-100 rounded-xl hover:shadow-sm transition group">
                             <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${color}">
                                 <i class="ph ${icon} text-xl"></i>
                             </div>
                             <div class="flex-1 min-w-0">
                                 <h4 class="font-bold text-slate-800 text-sm truncate">${e.Title}</h4>
                                 <p class="text-xs font-medium text-slate-500">${niceDate} • <span class="uppercase tracking-wider opacity-70">${typeLabel}</span> ${repeatBadge}</p>
+                                ${descHtml}
                             </div>
                             <div class="shrink-0 flex opacity-0 group-hover:opacity-100 transition-opacity">
                                 ${actionButtons}
@@ -1476,6 +1496,7 @@
             document.getElementById('event-edit-id').value = '';
             document.getElementById('event-date').value = dateStr;
             document.getElementById('event-repeat').value = 'Never';
+            document.getElementById('event-desc').value = '';
             document.getElementById('event-modal-title').textContent = 'Add Calendar Event';
             document.getElementById('btn-save-event').innerHTML = 'Save Event';
             openModal('add-event-modal');
@@ -1493,7 +1514,8 @@
                 'Date': document.getElementById('event-date').value,
                 'Type': document.getElementById('event-type').value,
                 'Title': document.getElementById('event-title').value.trim(),
-                'Repeat': document.getElementById('event-repeat').value
+                'Repeat': document.getElementById('event-repeat').value,
+                'Description': document.getElementById('event-desc').value.trim()
             };
 
             let commitMsg = '';
@@ -1538,6 +1560,7 @@
             document.getElementById('event-type').value = ev.Type;
             document.getElementById('event-title').value = ev.Title;
             document.getElementById('event-repeat').value = ev.Repeat || 'Never';
+            document.getElementById('event-desc').value = ev.Description || '';
             document.getElementById('event-modal-title').textContent = 'Edit Event';
             document.getElementById('btn-save-event').innerHTML = 'Update Event';
             document.getElementById('add-event-modal').classList.remove('hidden');
@@ -1623,6 +1646,8 @@
             if(sortedMonths.length === 0) {
                 document.getElementById('list-cashbook-entries').innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">No cashbook entries yet.</td></tr>`;
                 document.getElementById('cb-total-cash').textContent = '₹0'; document.getElementById('cb-total-online').textContent = '₹0';
+                document.getElementById('cb-month-in').textContent = '₹0'; document.getElementById('cb-month-out').textContent = '₹0';
+                document.getElementById('cb-month-label-in').textContent = 'This Month'; document.getElementById('cb-month-label-out').textContent = 'This Month';
                 return;
             }
             if(!currentCashbookMonth || !monthsMap.has(currentCashbookMonth)) currentCashbookMonth = sortedMonths[0];
@@ -1644,10 +1669,17 @@
                 const dateTimeB = new Date(`${b.Date}T${b.Time || '00:00'}:00`);
                 return dateTimeB - dateTimeA;
             });
+            
+            let monthIn = 0;
+            let monthOut = 0;
 
             entriesToDisplay.forEach(entry => {
                 const amt = parseFloat(entry.Amount) || 0;
                 const isIn = entry['Transaction Type'] === 'In';
+                
+                if (isIn) monthIn += amt;
+                else monthOut += amt;
+
                 let timeDisplay = '-';
                 if (entry.Time) {
                     const [h, m] = entry.Time.split(':');
@@ -1679,6 +1711,14 @@
 
             document.getElementById('cb-total-cash').textContent = `₹${cashBal.toLocaleString('en-IN')}`;
             document.getElementById('cb-total-online').textContent = `₹${onlineBal.toLocaleString('en-IN')}`;
+            
+            document.getElementById('cb-month-in').textContent = `₹${monthIn.toLocaleString('en-IN')}`;
+            document.getElementById('cb-month-out').textContent = `₹${monthOut.toLocaleString('en-IN')}`;
+            
+            const [selY, selM] = currentCashbookMonth.split('-');
+            const selMonthName = new Date(selY, parseInt(selM)-1).toLocaleString('default', { month: 'short' });
+            document.getElementById('cb-month-label-in').textContent = selMonthName;
+            document.getElementById('cb-month-label-out').textContent = selMonthName;
         }
 
         async function handleAddCashbook(e) {
