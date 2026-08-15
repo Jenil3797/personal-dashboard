@@ -2,35 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Personal Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
         #toast-container { transition: opacity 0.3s ease; }
         
-        .nav-btn.active {
-            background-color: #2563eb;
-            color: #ffffff;
-        }
-        .nav-btn:not(.active) {
-            color: #94a3b8;
-        }
-        .nav-btn:not(.active):hover {
-            background-color: #1e293b;
-            color: #e2e8f0;
-        }
+        .nav-btn.active { background-color: #2563eb; color: #ffffff; }
+        .nav-btn:not(.active) { color: #94a3b8; }
+        .nav-btn:not(.active):hover { background-color: #1e293b; color: #e2e8f0; }
         
-        .month-btn.active {
-            background-color: #1e293b;
-            color: #ffffff;
-            border-color: #1e293b;
-        }
+        .month-btn.active { background-color: #1e293b; color: #ffffff; border-color: #1e293b; }
         
         .loader {
             border: 3px solid #f3f3f3;
@@ -43,20 +31,20 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col overflow-hidden">
+<body class="bg-slate-50 text-slate-800 font-sans h-[100dvh] flex flex-col overflow-hidden">
 
-    <div id="toast-container" class="fixed top-4 right-4 z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+    <div id="toast-container" class="fixed top-4 right-4 z-[60] opacity-0 pointer-events-none transition-opacity duration-300">
         <div id="toast-message" class="bg-white px-6 py-3 rounded-lg shadow-lg border-l-4 font-medium">
             Message goes here
         </div>
     </div>
 
-    <div id="global-loader" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 hidden flex-col items-center justify-center">
+    <div id="global-loader" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-[60] hidden flex-col items-center justify-center">
         <div class="loader mb-4" style="width: 48px; height: 48px;"></div>
         <p class="text-slate-600 font-medium">Syncing with GitHub...</p>
     </div>
 
-    <div id="login-view" class="bg-slate-50 min-h-screen flex items-center justify-center p-4 w-full absolute inset-0 z-40 hidden">
+    <div id="login-view" class="bg-slate-50 h-[100dvh] w-full absolute inset-0 z-50 flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
             <div class="text-center mb-6">
                 <h1 class="text-2xl font-bold text-slate-900">Welcome Back</h1>
@@ -87,11 +75,9 @@
         </div>
     </div>
 
-    <!-- MAIN APP SCREEN -->
     <div id="app-view" class="w-full h-[100dvh] flex flex-col md:flex-row hidden overflow-hidden">
         
-        <!-- Sidebar (Desktop) / Bottom Nav (Mobile) -->
-        <nav class="bg-slate-900 text-white md:w-64 w-full flex-shrink-0 md:flex flex-col z-20 order-last md:order-first shadow-[0_-4px_15px_rgba(0,0,0,0.15)] md:shadow-none">
+        <nav class="bg-slate-900 text-white md:w-64 w-full flex-shrink-0 md:flex flex-col z-20 order-last md:order-first shadow-[0_-4px_15px_rgba(0,0,0,0.15)] md:shadow-none pb-safe">
             <div class="p-6 hidden md:block border-b border-slate-800">
                 <h2 class="text-2xl font-bold text-white flex items-center gap-2">
                     <i class="ph ph-squares-four text-blue-500"></i>
@@ -100,15 +86,15 @@
             </div>
 
             <div class="flex-1 flex md:flex-col justify-around md:justify-start px-2 py-3 md:p-4 gap-2 overflow-x-auto md:overflow-visible">
-                <button onclick="switchTab('tab-overview', this)" class="nav-btn active flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center px-4 py-3 rounded-lg transition gap-1 md:gap-3">
+                <button onclick="switchTab('tab-overview', this)" class="nav-btn active flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center px-2 sm:px-4 py-3 rounded-lg transition gap-1 md:gap-3">
                     <i class="ph ph-chart-line-up text-xl md:text-2xl"></i>
                     <span class="text-xs md:text-sm font-medium">Overview</span>
                 </button>
-                <button onclick="switchTab('tab-tasks', this)" class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center px-4 py-3 rounded-lg transition gap-1 md:gap-3">
+                <button onclick="switchTab('tab-tasks', this)" class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center px-2 sm:px-4 py-3 rounded-lg transition gap-1 md:gap-3">
                     <i class="ph ph-check-square-offset text-xl md:text-2xl"></i>
                     <span class="text-xs md:text-sm font-medium">Tasks</span>
                 </button>
-                <button onclick="switchTab('tab-cashbook', this)" class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center px-4 py-3 rounded-lg transition gap-1 md:gap-3">
+                <button onclick="switchTab('tab-cashbook', this)" class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center md:justify-start justify-center px-2 sm:px-4 py-3 rounded-lg transition gap-1 md:gap-3">
                     <i class="ph ph-wallet text-xl md:text-2xl"></i>
                     <span class="text-xs md:text-sm font-medium">Cashbook</span>
                 </button>
@@ -122,9 +108,7 @@
             </div>
         </nav>
 
-        <!-- Main Content Area -->
-        <main class="flex-1 min-h-0 bg-slate-50 overflow-y-auto w-full relative pb-6 md:pb-0">
-            <!-- Mobile Header -->
+        <main class="flex-1 min-h-0 bg-slate-50 overflow-y-auto w-full relative">
             <header class="md:hidden bg-white shadow-sm px-4 py-4 flex justify-between items-center sticky top-0 z-10">
                 <h1 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                     <i class="ph ph-squares-four text-blue-600"></i> My Dashboard
@@ -139,9 +123,8 @@
                 </div>
             </header>
 
-            <div class="p-4 md:p-8 max-w-6xl mx-auto">
+            <div class="p-4 md:p-8 max-w-6xl mx-auto pb-8">
                 
-                <!-- OVERVIEW TAB -->
                 <div id="tab-overview" class="tab-content block">
                     <div class="flex justify-between items-center mb-6 hidden md:flex">
                         <h2 class="text-2xl font-bold text-slate-800">Overview</h2>
@@ -213,7 +196,6 @@
                     </div>
                 </div>
 
-                <!-- TASKS TAB -->
                 <div id="tab-tasks" class="tab-content hidden">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-2xl font-bold text-slate-800 hidden md:block">Task Manager</h2>
@@ -224,29 +206,24 @@
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                        <!-- Pending Tasks -->
                         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                             <div class="bg-slate-50 px-5 py-4 border-b border-slate-200 flex justify-between items-center">
                                 <h3 class="font-bold text-slate-700">Pending</h3>
                                 <span id="count-pending" class="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold">0</span>
                             </div>
-                            <ul id="list-pending-tasks" class="divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
-                            </ul>
+                            <ul id="list-pending-tasks" class="divide-y divide-slate-100 max-h-[600px] overflow-y-auto"></ul>
                         </div>
 
-                        <!-- Completed Tasks -->
                         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden opacity-80">
                             <div class="bg-slate-50 px-5 py-4 border-b border-slate-200 flex justify-between items-center">
                                 <h3 class="font-bold text-slate-700">Completed</h3>
                                 <span id="count-completed" class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">0</span>
                             </div>
-                            <ul id="list-completed-tasks" class="divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
-                            </ul>
+                            <ul id="list-completed-tasks" class="divide-y divide-slate-100 max-h-[600px] overflow-y-auto"></ul>
                         </div>
                     </div>
                 </div>
 
-                <!-- CASHBOOK TAB -->
                 <div id="tab-cashbook" class="tab-content hidden">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-2xl font-bold text-slate-800 hidden md:block">Cashbook</h2>
@@ -256,11 +233,9 @@
                         </button>
                     </div>
 
-                    <div id="person-balances-container" class="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4 hidden">
-                    </div>
+                    <div id="person-balances-container" class="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4 hidden"></div>
 
-                    <div class="mb-4 flex gap-2 overflow-x-auto pb-2 custom-scrollbar" id="cashbook-month-filters">
-                    </div>
+                    <div class="mb-4 flex gap-2 overflow-x-auto pb-2 custom-scrollbar" id="cashbook-month-filters"></div>
 
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto">
                         <table class="w-full text-left border-collapse min-w-[600px]">
@@ -275,8 +250,7 @@
                                     <th class="p-4 font-semibold w-24 text-center">Action</th>
                                 </tr>
                             </thead>
-                            <tbody id="list-cashbook-entries" class="divide-y divide-slate-100 text-sm">
-                            </tbody>
+                            <tbody id="list-cashbook-entries" class="divide-y divide-slate-100 text-sm"></tbody>
                         </table>
                         
                         <div class="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-6 text-sm">
@@ -290,7 +264,6 @@
         </main>
     </div>
 
-    <!-- MODALS -->
     <div id="add-task-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all">
             <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
@@ -620,7 +593,7 @@
             if (!response.ok) {
                 if (response.status === 404) return [];
                 const errData = await response.json().catch(() => ({}));
-                throw new Error(errData.message || `Failed to fetch ${filename} (Status: ${response.status})`);
+                throw new Error(errData.message || `Failed to fetch ${filename}`);
             }
             
             const data = await response.json();
@@ -649,9 +622,41 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(bodyPayload)
-        /* ==========================================================================
-           TASK MODULE LOGIC
-           ========================================================================== */
+            });
+
+            if (!response.ok) {
+                const errDetails = await response.json().catch(() => ({}));
+                throw new Error(errDetails.message || `Failed to update ${filename}`);
+            }
+            
+            const data = await response.json();
+            fileSHAs[filename] = data.content.sha;
+            return data;
+        }
+
+        async function loadAllData() {
+            toggleLoader(true);
+            try {
+                const [tasks, cashbook] = await Promise.all([
+                    fetchGitHubFile('tasks.csv'), 
+                    fetchGitHubFile('cashbook.csv')
+                ]);
+                
+                appData.tasks = tasks;
+                appData.cashbook = cashbook;
+                
+                renderTasksUI();
+                renderCashbookUI(); 
+                
+                showToast('Data Synced Successfully', 'success');
+            } catch (error) {
+                console.error(error);
+                showToast(`Sync Error: ${error.message}`, 'error');
+            } finally {
+                toggleLoader(false);
+            }
+        }
+
         function renderTasksUI() {
             const pendingList = document.getElementById('list-pending-tasks');
             const completedList = document.getElementById('list-completed-tasks');
@@ -662,7 +667,6 @@
             let pendingTasks = [];
             let completedTasks = [];
 
-            // 1. Separate pending and completed tasks
             appData.tasks.forEach(task => {
                 if(!task.ID) return;
                 if(task.Status === 'Completed') {
@@ -672,32 +676,29 @@
                 }
             });
 
-            // 2. Sort Pending Tasks by Priority (High > Medium > Low) and then by Issue Date
+            // Sorting Pending Tasks (Priority -> Newest Issue Date)
             const priorityWeight = { 'High': 3, 'Medium': 2, 'Low': 1 };
             pendingTasks.sort((a, b) => {
                 const weightDiff = (priorityWeight[b.Priority] || 0) - (priorityWeight[a.Priority] || 0);
-                if (weightDiff !== 0) return weightDiff; // If priorities differ, sort by priority
+                if (weightDiff !== 0) return weightDiff; 
                 
-                // If priorities are the same, tie-break by newest first
                 const timeA = new Date(`${a['Issue Date'] || '1970-01-01'}T${a['Issue Time'] || '00:00'}:00`).getTime();
                 const timeB = new Date(`${b['Issue Date'] || '1970-01-01'}T${b['Issue Time'] || '00:00'}:00`).getTime();
                 return timeB - timeA;
             });
 
-            // 3. Sort Completed Tasks by Completed Date & Time (Newest completed first)
+            // Sorting Completed Tasks (Newest Completed Time First)
             completedTasks.sort((a, b) => {
                 const timeA = new Date(`${a['Completed Date'] || '1970-01-01'}T${a['Completed Time'] || '00:00'}:00`).getTime();
                 const timeB = new Date(`${b['Completed Date'] || '1970-01-01'}T${b['Completed Time'] || '00:00'}:00`).getTime();
                 return timeB - timeA;
             });
 
-            // 4. Render Logic
             const renderTaskItem = (task, isCompleted, listElement) => {
                 let prioColor = 'text-slate-500 bg-slate-100';
                 if(task.Priority === 'High') prioColor = 'text-red-700 bg-red-100';
                 if(task.Priority === 'Medium') prioColor = 'text-blue-700 bg-blue-100';
 
-                // Format Completed Time nicely
                 let timeDisplay = '';
                 if (task['Completed Time']) {
                     const [h, m] = task['Completed Time'].split(':');
@@ -739,16 +740,13 @@
             pendingTasks.forEach(task => renderTaskItem(task, false, pendingList));
             completedTasks.forEach(task => renderTaskItem(task, true, completedList));
 
-            const pendingCount = pendingTasks.length;
-            const completedCount = completedTasks.length;
-
-            document.getElementById('count-pending').textContent = pendingCount;
-            document.getElementById('count-completed').textContent = completedCount;
+            document.getElementById('count-pending').textContent = pendingTasks.length;
+            document.getElementById('count-completed').textContent = completedTasks.length;
             document.getElementById('metric-total-tasks').textContent = appData.tasks.length;
-            document.getElementById('metric-pending-tasks').textContent = pendingCount;
+            document.getElementById('metric-pending-tasks').textContent = pendingTasks.length;
 
-            if(pendingCount === 0) pendingList.innerHTML = '<div class="p-8 text-center text-slate-400">No pending tasks! 🎉</div>';
-            if(completedCount === 0) completedList.innerHTML = '<div class="p-8 text-center text-slate-400">No completed tasks yet.</div>';
+            if(pendingTasks.length === 0) pendingList.innerHTML = '<div class="p-8 text-center text-slate-400">No pending tasks! 🎉</div>';
+            if(completedTasks.length === 0) completedList.innerHTML = '<div class="p-8 text-center text-slate-400">No completed tasks yet.</div>';
         }
 
         async function handleAddTask(e) {
