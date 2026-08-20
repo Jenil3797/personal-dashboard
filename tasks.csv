@@ -1,3 +1,3 @@
 ID,Issue Date,Issue Time,Status,Completed Date,Completed Time,Task Name,Description,Priority,Due Date,Reminder
-TSK-1786966683601,2026-08-17,17:04,Pending,,,Manage Engine,"Ask AI that how to analyze patch from endpoint central with impact, changes, severity, and why.",High,,None
+TSK-1786966683601,2026-08-17,17:04,Pending,,,Patch Management,Create patch management path and step by step procedure.,High,,None
 TSK-1787134275757,2026-08-19,15:40,Pending,,,Clean Insta,Clean Instagram Saved Reels,Medium,,None
