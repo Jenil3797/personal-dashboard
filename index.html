@@ -51,13 +51,19 @@
         .ql-editor { min-height: 150px; }
         
         /* Calendar Grid */
-        .cal-day-header { text-align: center; font-weight: 600; font-size: 0.75rem; color: #64748b; padding: 0.75rem 0; text-transform: uppercase; }
-        .cal-cell { min-height: 90px; padding: 0.5rem; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; transition: all 0.2s; }
+        .cal-day-header { text-align: center; font-weight: 600; font-size: 0.75rem; color: #64748b; padding: 0.5rem 0; text-transform: uppercase; }
+        .cal-cell { min-height: 70px; padding: 0.25rem; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; transition: all 0.2s; position: relative;}
         .cal-cell:hover { background-color: #f8fafc; cursor: pointer; }
         .cal-cell.today .date-num { background-color: #2563eb; color: white; }
         .cal-cell.other-month { background-color: #f8fafc; color: #cbd5e1; opacity: 0.6; }
         .cal-cell.selected { background-color: #eff6ff; box-shadow: inset 0 0 0 2px #3b82f6; border-radius: 0.5rem; border: none; }
-        .date-num { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; font-size: 0.875rem; font-weight: 500; color: #334155; margin-bottom: 0.5rem; }
+        .date-num { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; font-size: 0.75rem; font-weight: 500; color: #334155; margin-bottom: 0.25rem; }
+        
+        @media (min-width: 768px) {
+            .cal-day-header { padding: 0.75rem 0; font-size: 0.875rem;}
+            .cal-cell { min-height: 90px; padding: 0.5rem;}
+            .date-num { width: 28px; height: 28px; font-size: 0.875rem; margin-bottom: 0.5rem;}
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-[100dvh] flex flex-col overflow-hidden">
@@ -159,9 +165,9 @@
             </div>
         </nav>
 
-        <main class="flex-1 min-h-0 bg-slate-50 overflow-y-auto w-full relative pb-20 md:pb-0 h-full">
+        <main class="flex-1 min-h-0 bg-slate-50 overflow-y-auto w-full relative pb-16 md:pb-0 h-full flex flex-col">
             <!-- Mobile Header -->
-            <header class="md:hidden bg-white shadow-sm px-4 py-3 flex justify-between items-center sticky top-0 z-10">
+            <header class="md:hidden bg-white shadow-sm px-4 py-3 flex justify-between items-center sticky top-0 z-10 shrink-0">
                 <div class="flex items-center gap-2">
                     <div class="w-7 h-7 flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" class="w-full h-full"><rect width="256" height="256" fill="none"/><rect x="48" y="48" width="64" height="64" rx="16" fill="#3b82f6"/><rect x="144" y="48" width="64" height="64" rx="16" fill="#60a5fa"/><rect x="48" y="144" width="64" height="64" rx="16" fill="#93c5fd"/><rect x="144" y="144" width="64" height="64" rx="16" fill="#2563eb"/></svg>
@@ -182,10 +188,10 @@
                 </div>
             </header>
 
-            <div class="p-4 md:p-8 max-w-6xl mx-auto h-full">
+            <div class="p-4 md:p-8 max-w-6xl mx-auto h-full flex flex-col flex-1 min-h-0 w-full">
                 
                 <!-- TAB: OVERVIEW -->
-                <div id="tab-overview" class="tab-content block h-full">
+                <div id="tab-overview" class="tab-content block h-full overflow-y-auto">
                     <div class="flex justify-between items-center mb-6 hidden md:flex">
                         <h2 class="text-2xl font-bold text-slate-800">Overview</h2>
                         <button onclick="loadAllData()" class="bg-white text-slate-600 border border-slate-200 px-4 py-2 rounded-lg font-medium hover:bg-slate-50 transition flex items-center gap-2 shadow-sm">
@@ -194,7 +200,7 @@
                     </div>
                     
                     <!-- 2 Columns, 3 Rows Grid -->
-                    <div class="grid grid-cols-2 md:grid-cols-2 gap-4 md:gap-6">
+                    <div class="grid grid-cols-2 md:grid-cols-2 gap-4 md:gap-6 pb-4">
                         <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
                             <div class="flex flex-col md:flex-row md:items-center justify-between mb-2 md:mb-4 gap-2">
                                 <h3 class="text-slate-500 text-xs md:text-sm font-semibold order-2 md:order-1">Total Tasks</h3>
@@ -222,7 +228,7 @@
                                     <i class="ph ph-money text-xl"></i>
                                 </div>
                             </div>
-                            <p class="text-2xl md:text-3xl font-bold text-slate-800">₹<span id="metric-cash-balance">0</span></p>
+                            <p class="text-xl md:text-3xl font-bold text-slate-800">₹<span id="metric-cash-balance">0</span></p>
                         </div>
 
                         <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
@@ -232,7 +238,7 @@
                                     <i class="ph ph-bank text-xl"></i>
                                 </div>
                             </div>
-                            <p class="text-2xl md:text-3xl font-bold text-slate-800">₹<span id="metric-online-balance">0</span></p>
+                            <p class="text-xl md:text-3xl font-bold text-slate-800">₹<span id="metric-online-balance">0</span></p>
                         </div>
 
                         <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
@@ -242,7 +248,7 @@
                                     <i class="ph ph-trend-up text-xl"></i>
                                 </div>
                             </div>
-                            <p class="text-2xl md:text-3xl font-bold text-emerald-600">₹<span id="metric-will-get">0</span></p>
+                            <p class="text-xl md:text-3xl font-bold text-emerald-600">₹<span id="metric-will-get">0</span></p>
                         </div>
 
                         <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
@@ -252,13 +258,13 @@
                                     <i class="ph ph-trend-down text-xl"></i>
                                 </div>
                             </div>
-                            <p class="text-2xl md:text-3xl font-bold text-rose-600">₹<span id="metric-will-give">0</span></p>
+                            <p class="text-xl md:text-3xl font-bold text-rose-600">₹<span id="metric-will-give">0</span></p>
                         </div>
                     </div>
                 </div>
 
                 <!-- TAB: TASKS -->
-                <div id="tab-tasks" class="tab-content hidden h-full flex flex-col">
+                <div id="tab-tasks" class="tab-content hidden h-full flex flex-col min-h-0">
                     <div class="flex justify-between items-center mb-4 shrink-0">
                         <h2 class="text-xl md:text-2xl font-bold text-slate-800">Task Manager</h2>
                         <button onclick="openModal('add-task-modal')" class="bg-blue-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm md:text-base font-medium hover:bg-blue-700 transition flex items-center gap-2 shadow-sm">
@@ -286,7 +292,7 @@
                 </div>
 
                 <!-- TAB: CASHBOOK -->
-                <div id="tab-cashbook" class="tab-content hidden h-full flex flex-col">
+                <div id="tab-cashbook" class="tab-content hidden h-full flex flex-col min-h-0">
                     <div class="flex justify-between items-center mb-4 shrink-0">
                         <h2 class="text-xl md:text-2xl font-bold text-slate-800">Cashbook</h2>
                         <button onclick="openModal('add-cashbook-modal')" class="bg-green-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm md:text-base font-medium hover:bg-green-700 transition flex items-center gap-2 shadow-sm">
@@ -297,17 +303,17 @@
                     <div class="grid grid-cols-2 gap-4 mb-4 shrink-0">
                         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                             <div>
-                                <p class="text-xs text-slate-500 font-semibold mb-1">Total Cash Available</p>
-                                <p class="text-xl font-bold text-slate-800">₹<span id="cb-global-cash">0</span></p>
+                                <p class="text-xs text-slate-500 font-semibold mb-1">Total Cash</p>
+                                <p class="text-lg md:text-xl font-bold text-slate-800">₹<span id="cb-global-cash">0</span></p>
                             </div>
-                            <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center hidden sm:flex"><i class="ph ph-money text-xl"></i></div>
+                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center"><i class="ph ph-money text-xl"></i></div>
                         </div>
                         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                             <div>
-                                <p class="text-xs text-slate-500 font-semibold mb-1">Total Online Available</p>
-                                <p class="text-xl font-bold text-slate-800">₹<span id="cb-global-online">0</span></p>
+                                <p class="text-xs text-slate-500 font-semibold mb-1">Total Online</p>
+                                <p class="text-lg md:text-xl font-bold text-slate-800">₹<span id="cb-global-online">0</span></p>
                             </div>
-                            <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center hidden sm:flex"><i class="ph ph-bank text-xl"></i></div>
+                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center"><i class="ph ph-bank text-xl"></i></div>
                         </div>
                     </div>
 
@@ -347,7 +353,7 @@
                 </div>
 
                 <!-- TAB: NOTES -->
-                <div id="tab-notes" class="tab-content hidden h-full flex flex-col">
+                <div id="tab-notes" class="tab-content hidden h-full flex flex-col min-h-0">
                     <div class="flex justify-between items-center mb-4 shrink-0">
                         <h2 class="text-xl md:text-2xl font-bold text-slate-800">Notes</h2>
                         <button onclick="openNoteModal()" class="bg-purple-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm md:text-base font-medium hover:bg-purple-700 transition flex items-center gap-2 shadow-sm">
@@ -359,37 +365,39 @@
                 </div>
 
                 <!-- TAB: EVENTS & CALENDAR -->
-                <div id="tab-events" class="tab-content hidden h-full flex flex-col">
-                    <div class="flex justify-between items-center mb-6 shrink-0">
+                <div id="tab-events" class="tab-content hidden h-full flex flex-col min-h-0">
+                    <div class="flex justify-between items-center mb-4 md:mb-6 shrink-0">
                         <h2 class="text-xl md:text-2xl font-bold text-slate-800">Events Calendar</h2>
-                        <button onclick="prepEventDate(getLocalDateString())" class="bg-rose-600 text-white px-4 py-2 rounded-lg text-sm md:text-base font-medium hover:bg-rose-700 transition flex items-center gap-2 shadow-md hover:shadow-lg">
+                        <button onclick="prepEventDate(getLocalDateString())" class="bg-rose-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm md:text-base font-medium hover:bg-rose-700 transition flex items-center gap-2 shadow-sm hover:shadow-md">
                             <i class="ph ph-plus-circle text-lg md:text-xl"></i> Add Event
                         </button>
                     </div>
 
-                    <div class="flex-1 min-h-0 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col md:flex-row mb-4">
-                        <div class="flex-1 flex flex-col border-r border-slate-200 bg-white">
-                            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white shrink-0">
-                                <h3 id="cal-month-title" class="text-xl font-bold text-slate-800 tracking-tight">Month Year</h3>
+                    <div class="flex-1 min-h-0 bg-white rounded-xl md:rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col md:flex-row mb-4">
+                        <div class="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-slate-200 bg-white min-h-[50%] md:min-h-0 relative">
+                            <div class="px-4 py-3 md:px-6 md:py-4 border-b border-slate-200 flex justify-between items-center bg-white shrink-0 sticky top-0 z-10">
+                                <h3 id="cal-month-title" class="text-lg md:text-xl font-bold text-slate-800 tracking-tight">Month Year</h3>
                                 <div class="flex gap-1">
-                                    <button onclick="changeCalendarMonth(-1)" class="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition border border-transparent hover:border-slate-200"><i class="ph ph-caret-left text-lg"></i></button>
-                                    <button onclick="changeCalendarMonth(1)" class="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition border border-transparent hover:border-slate-200"><i class="ph ph-caret-right text-lg"></i></button>
+                                    <button onclick="changeCalendarMonth(-1)" class="p-1.5 md:p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition border border-transparent hover:border-slate-200"><i class="ph ph-caret-left text-lg"></i></button>
+                                    <button onclick="changeCalendarMonth(1)" class="p-1.5 md:p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition border border-transparent hover:border-slate-200"><i class="ph ph-caret-right text-lg"></i></button>
                                 </div>
                             </div>
-                            <div class="grid grid-cols-7 bg-slate-50/50 border-b border-slate-200 shrink-0">
+                            <div class="grid grid-cols-7 bg-slate-50/50 border-b border-slate-200 shrink-0 sticky top-[53px] md:top-[69px] z-10">
                                 <div class="cal-day-header">Sun</div><div class="cal-day-header">Mon</div>
                                 <div class="cal-day-header">Tue</div><div class="cal-day-header">Wed</div>
                                 <div class="cal-day-header">Thu</div><div class="cal-day-header">Fri</div>
                                 <div class="cal-day-header">Sat</div>
                             </div>
-                            <div id="cal-grid" class="grid grid-cols-7 flex-1 auto-rows-fr bg-white p-2 gap-1"></div>
+                            <div class="flex-1 overflow-y-auto custom-scrollbar relative">
+                                <div id="cal-grid" class="grid grid-cols-7 auto-rows-fr bg-white p-1 md:p-2 gap-1 min-h-full"></div>
+                            </div>
                         </div>
 
-                        <div class="w-full md:w-96 flex flex-col bg-slate-50 h-[40dvh] md:h-auto border-t md:border-t-0 border-slate-200 shrink-0">
-                            <div class="px-6 py-5 border-b border-slate-200 bg-white shrink-0 flex justify-between items-center">
-                                <h3 id="cal-selected-date-title" class="font-bold text-slate-800 text-lg">Select a date</h3>
+                        <div class="w-full md:w-80 lg:w-96 flex flex-col bg-slate-50 flex-1 md:flex-none min-h-[30%] md:min-h-0 shrink-0">
+                            <div class="px-4 py-3 md:px-6 md:py-5 border-b border-slate-200 bg-white shrink-0 flex justify-between items-center sticky top-0 z-10">
+                                <h3 id="cal-selected-date-title" class="font-bold text-slate-800 text-base md:text-lg">Select a date</h3>
                             </div>
-                            <div class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar" id="cal-day-details"></div>
+                            <div class="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 custom-scrollbar" id="cal-day-details"></div>
                         </div>
                     </div>
                 </div>
@@ -1492,27 +1500,39 @@
                 const isSelected = selectedDayStr === cellDateStr;
                 
                 const cDiv = document.createElement('div');
-                cDiv.className = `cal-cell relative rounded-lg flex flex-col ${cell.isCur ? '' : 'other-month'} ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`;
-                cDiv.onclick = () => { selectedDayStr = cellDateStr; renderCalendarUI(); };
+                cDiv.className = `cal-cell relative rounded-lg flex flex-col items-center ${cell.isCur ? '' : 'other-month'} ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`;
+                cDiv.onclick = (e) => { 
+                    e.stopPropagation(); // prevent bubbling up
+                    selectedDayStr = cellDateStr; 
+                    renderCalendarUI(); 
+                };
                 
                 const numSpan = document.createElement('span');
                 numSpan.className = 'date-num';
                 numSpan.textContent = cell.d;
                 cDiv.appendChild(numSpan);
 
-                const dotsWrap = document.createElement('div');
-                dotsWrap.className = 'flex flex-wrap gap-1.5 mt-1 px-1';
+                const iconsWrap = document.createElement('div');
+                iconsWrap.className = 'flex flex-wrap justify-center gap-1 mt-1 px-1 w-full absolute bottom-1 left-0';
 
                 let dayItems = getItemsForDate(cell.y, cell.m, cell.d);
                 
-                dayItems.forEach(item => {
-                    const dot = document.createElement('div');
-                    dot.className = `w-2 h-2 rounded-full flex-shrink-0 shadow-sm ${item.dotColor}`;
-                    dot.title = item.title;
-                    dotsWrap.appendChild(dot);
+                // Show up to 3 icons, prioritize events over tasks
+                dayItems.slice(0,3).forEach(item => {
+                    const icon = document.createElement('i');
+                    icon.className = `ph ${item.icon} text-xs md:text-sm ${item.iconColor}`;
+                    icon.title = item.title;
+                    iconsWrap.appendChild(icon);
                 });
+                
+                if (dayItems.length > 3) {
+                     const more = document.createElement('span');
+                     more.className = "text-[10px] text-slate-400 font-bold leading-none self-center";
+                     more.textContent = "+";
+                     iconsWrap.appendChild(more);
+                }
 
-                cDiv.appendChild(dotsWrap);
+                cDiv.appendChild(iconsWrap);
                 grid.appendChild(cDiv);
             });
 
@@ -1544,7 +1564,7 @@
                     
                     let actions = '';
                     if(item.source === 'event') {
-                        actions = `<div class="flex gap-2 ml-auto shrink-0 opacity-0 group-hover:opacity-100 transition">
+                        actions = `<div class="flex gap-2 ml-auto shrink-0 opacity-100 md:opacity-0 group-hover:opacity-100 transition">
                             <button onclick="editEvent('${item.id}')" class="text-slate-400 hover:text-blue-600 bg-slate-50 p-1.5 rounded-lg"><i class="ph ph-pencil-simple text-lg"></i></button>
                             <button onclick="deleteEvent('${item.id}')" class="text-slate-400 hover:text-red-600 bg-slate-50 p-1.5 rounded-lg"><i class="ph ph-trash text-lg"></i></button>
                         </div>`;
@@ -1585,11 +1605,11 @@
                         else if (e.Repeat === 'Yearly') { occurs = (m === em && d === ed); }
 
                         if(occurs) {
-                            let dCol = 'bg-blue-500'; let bCol = 'border-blue-100'; let iBg = 'bg-blue-100 text-blue-600'; let ic = 'ph-calendar-star';
-                            if(e.Type === 'Birthday') { dCol = 'bg-rose-500'; bCol = 'border-rose-100'; iBg = 'bg-rose-100 text-rose-600'; ic = 'ph-cake'; }
-                            if(e.Type === 'Anniversary') { dCol = 'bg-purple-500'; bCol = 'border-purple-100'; iBg = 'bg-purple-100 text-purple-600'; ic = 'ph-heart'; }
+                            let bCol = 'border-blue-100'; let iBg = 'bg-blue-100 text-blue-600'; let ic = 'ph-calendar-star'; let iCol = 'text-blue-500';
+                            if(e.Type === 'Birthday') { bCol = 'border-rose-100'; iBg = 'bg-rose-100 text-rose-600'; ic = 'ph-cake'; iCol = 'text-rose-500'; }
+                            if(e.Type === 'Anniversary') { bCol = 'border-purple-100'; iBg = 'bg-purple-100 text-purple-600'; ic = 'ph-heart'; iCol = 'text-purple-500'; }
                             
-                            items.push({ source: 'event', id: e.ID, title: e.Title, desc: e.Description, dotColor: dCol, borderColor: bCol, iconBg: iBg, icon: ic });
+                            items.push({ source: 'event', id: e.ID, title: e.Title, desc: e.Description, borderColor: bCol, iconBg: iBg, icon: ic, iconColor: iCol });
                         }
                     }
                 });
@@ -1600,10 +1620,10 @@
                 appData.tasks.forEach(t => {
                     if(!t.ID) return;
                     if(t['Issue Date'] === targetStr) {
-                        items.push({ source: 'task', id: t.ID, title: `Added: ${t['Task Name']}`, desc: 'Task opened', dotColor: 'bg-amber-500', borderColor: 'border-amber-100', iconBg: 'bg-amber-100 text-amber-600', icon: 'ph-clipboard-text' });
+                        items.push({ source: 'task', id: t.ID, title: `Added: ${t['Task Name']}`, desc: 'Task opened', borderColor: 'border-amber-100', iconBg: 'bg-amber-100 text-amber-600', icon: 'ph-clipboard-text', iconColor: 'text-amber-500' });
                     }
                     if(t.Status === 'Completed' && t['Completed Date'] === targetStr) {
-                        items.push({ source: 'task', id: t.ID, title: `Done: ${t['Task Name']}`, desc: 'Task finished', dotColor: 'bg-emerald-500', borderColor: 'border-emerald-100', iconBg: 'bg-emerald-100 text-emerald-600', icon: 'ph-check-circle' });
+                        items.push({ source: 'task', id: t.ID, title: `Done: ${t['Task Name']}`, desc: 'Task finished', borderColor: 'border-emerald-100', iconBg: 'bg-emerald-100 text-emerald-600', icon: 'ph-check-circle', iconColor: 'text-emerald-500' });
                     }
                 });
             }
